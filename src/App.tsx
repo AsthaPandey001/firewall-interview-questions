@@ -28,6 +28,7 @@ export function App() {
     }
   });
 
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeNavTab, setActiveNavTab] = useState<'lab' | 'sandbox' | 'cheatsheet'>('lab');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -65,6 +66,25 @@ export function App() {
     setCurrentQuestionId(id);
     setActiveNavTab('lab');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    setActiveNavTab('lab');
+    
+    // Check if current question is in selected category; if not, switch to first question of category
+    const matchingQuestions = QUESTIONS_DATA.filter((q) => {
+      if (catId === 'all') return true;
+      if (catId === 'fundamentals') return q.categoryId === 'fundamentals';
+      if (catId === 'acl-rules') return q.categoryId === 'acl-rules';
+      if (catId === 'nat') return q.categoryId === 'nat';
+      if (catId === 'security') return ['ids-ips', 'segmentation', 'vpn-ipsec', 'tls'].includes(q.categoryId);
+      return q.categoryId === catId;
+    });
+
+    if (matchingQuestions.length > 0 && !matchingQuestions.some((q) => q.id === currentQuestionId)) {
+      handleSelectQuestion(matchingQuestions[0].id);
+    }
   };
 
   const handleMarkCompleted = (id: number) => {
@@ -110,27 +130,25 @@ export function App() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col selection:bg-blue-600 selection:text-white">
       
-      {/* 1. Global Header */}
+      {/* 1. Global Header with Category Filter Tabs */}
       <Header
-        activeTab={activeNavTab}
-        setActiveTab={setActiveNavTab}
-        completedCount={completedIds.length}
-        totalQuestions={QUESTIONS_DATA.length}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
         onOpenSearch={() => setIsSearchOpen(true)}
-        onResetProgress={handleResetProgress}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
       />
 
-      {/* 2. Main Body Layout (Spacious left alignment with top gap and curved elements) */}
+      {/* 2. Main Body Layout */}
       <div className="mx-auto flex w-full max-w-[1440px] flex-1 px-3 sm:px-5 lg:px-6 py-4 gap-6">
         
-        {/* Left Sidebar (Pushed nicely to the left with top space and curved corners) */}
+        {/* Left Sidebar */}
         <Sidebar
           questions={QUESTIONS_DATA}
           currentQuestionId={currentQuestionId}
           onSelectQuestion={handleSelectQuestion}
           completedIds={completedIds}
+          selectedCategory={selectedCategory}
           mobileOpen={mobileMenuOpen}
           setMobileOpen={setMobileMenuOpen}
           onOpenSandbox={() => setActiveNavTab('sandbox')}

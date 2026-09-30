@@ -12,6 +12,7 @@ interface SidebarProps {
   currentQuestionId: number;
   onSelectQuestion: (id: number) => void;
   completedIds: number[];
+  selectedCategory: string;
   mobileOpen: boolean;
   setMobileOpen: (open: boolean) => void;
   onOpenSandbox: () => void;
@@ -22,16 +23,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentQuestionId,
   onSelectQuestion,
   completedIds,
+  selectedCategory = 'all',
   mobileOpen,
   setMobileOpen
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredQuestions = questions.filter(q => {
-    return (
+    const matchesSearch = (
       q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.id.toString().includes(searchQuery)
     );
+    if (!matchesSearch) return false;
+    if (selectedCategory === 'all') return true;
+    if (selectedCategory === 'fundamentals') return q.categoryId === 'fundamentals';
+    if (selectedCategory === 'acl-rules') return q.categoryId === 'acl-rules';
+    if (selectedCategory === 'nat') return q.categoryId === 'nat';
+    if (selectedCategory === 'security') return ['ids-ips', 'segmentation', 'vpn-ipsec', 'tls'].includes(q.categoryId);
+    return q.categoryId === selectedCategory;
   });
 
   const completedCount = completedIds.length;
