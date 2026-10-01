@@ -3,7 +3,7 @@ import type { QuestionData } from '../../types';
 import { Smartphone, Monitor } from 'lucide-react';
 import { MobileVerticalVisualizer } from './MobileVerticalVisualizer';
 
-// Import all 20 dedicated visualizer components
+// Import all 50 dedicated visualizer components
 import { Q1FirewallFlowVisualizer } from './Q1FirewallFlowVisualizer';
 import { Q2FirewallTypesVisualizer } from './Q2FirewallTypesVisualizer';
 import { Q3StatefulStatelessVisualizer } from './Q3StatefulStatelessVisualizer';
@@ -24,6 +24,38 @@ import { Q17SegmentationVisualizer } from './Q17SegmentationVisualizer';
 import { Q18VpnArchitecturesVisualizer } from './Q18VpnArchitecturesVisualizer';
 import { Q19IpsecVisualizer } from './Q19IpsecVisualizer';
 import { Q20TlsHandshakeVisualizer } from './Q20TlsHandshakeVisualizer';
+
+// Questions 21–50
+import { Q21RouterVsFirewallVisualizer } from './Q21RouterVsFirewallVisualizer';
+import { Q22DmzProtectionVisualizer } from './Q22DmzProtectionVisualizer';
+import { Q23DefaultGatewayVisualizer } from './Q23DefaultGatewayVisualizer';
+import { Q24InboundOutboundVisualizer } from './Q24InboundOutboundVisualizer';
+import { Q25HostVsNetworkFwVisualizer } from './Q25HostVsNetworkFwVisualizer';
+import { Q26FirewallLoggingVisualizer } from './Q26FirewallLoggingVisualizer';
+import { Q27RuleShadowingVisualizer } from './Q27RuleShadowingVisualizer';
+import { Q28RuleOptimizationVisualizer } from './Q28RuleOptimizationVisualizer';
+import { Q29DenyByDefaultVisualizer } from './Q29DenyByDefaultVisualizer';
+import { Q30EgressFilteringVisualizer } from './Q30EgressFilteringVisualizer';
+import { Q31ArpSecurityVisualizer } from './Q31ArpSecurityVisualizer';
+import { Q32ArpSpoofingVisualizer } from './Q32ArpSpoofingVisualizer';
+import { Q33DnsSecurityVisualizer } from './Q33DnsSecurityVisualizer';
+import { Q34DnsSpoofingVisualizer } from './Q34DnsSpoofingVisualizer';
+import { Q35DhcpRogueVisualizer } from './Q35DhcpRogueVisualizer';
+import { Q36MacFilteringVisualizer } from './Q36MacFilteringVisualizer';
+import { Q37PortScanVisualizer } from './Q37PortScanVisualizer';
+import { Q38SynFloodVisualizer } from './Q38SynFloodVisualizer';
+import { Q39DdosScrubbingVisualizer } from './Q39DdosScrubbingVisualizer';
+import { Q40IdsSignatureVsAnomalyVisualizer } from './Q40IdsSignatureVsAnomalyVisualizer';
+import { Q41TlsVsIpsecVpnVisualizer } from './Q41TlsVsIpsecVpnVisualizer';
+import { Q42VpnTunnelSetupVisualizer } from './Q42VpnTunnelSetupVisualizer';
+import { Q43SplitTunnelingVisualizer } from './Q43SplitTunnelingVisualizer';
+import { Q44ZeroTrustVisualizer } from './Q44ZeroTrustVisualizer';
+import { Q45LeastPrivilegeVisualizer } from './Q45LeastPrivilegeVisualizer';
+import { Q46NacAccessVisualizer } from './Q46NacAccessVisualizer';
+import { Q47ForwardVsReverseProxyVisualizer } from './Q47ForwardVsReverseProxyVisualizer';
+import { Q48WafVsNetworkFwVisualizer } from './Q48WafVsNetworkFwVisualizer';
+import { Q49TroubleshootWebsiteVisualizer } from './Q49TroubleshootWebsiteVisualizer';
+import { Q50TroubleshootServerVisualizer } from './Q50TroubleshootServerVisualizer';
 
 interface UniversalVisualEngineProps {
   question: QuestionData;
@@ -82,6 +114,66 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
         return <Q19IpsecVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
       case 20:
         return <Q20TlsHandshakeVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 21:
+        return <Q21RouterVsFirewallVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 22:
+        return <Q22DmzProtectionVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 23:
+        return <Q23DefaultGatewayVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 24:
+        return <Q24InboundOutboundVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 25:
+        return <Q25HostVsNetworkFwVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 26:
+        return <Q26FirewallLoggingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 27:
+        return <Q27RuleShadowingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 28:
+        return <Q28RuleOptimizationVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 29:
+        return <Q29DenyByDefaultVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 30:
+        return <Q30EgressFilteringVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 31:
+        return <Q31ArpSecurityVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 32:
+        return <Q32ArpSpoofingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 33:
+        return <Q33DnsSecurityVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 34:
+        return <Q34DnsSpoofingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 35:
+        return <Q35DhcpRogueVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 36:
+        return <Q36MacFilteringVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 37:
+        return <Q37PortScanVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 38:
+        return <Q38SynFloodVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 39:
+        return <Q39DdosScrubbingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 40:
+        return <Q40IdsSignatureVsAnomalyVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 41:
+        return <Q41TlsVsIpsecVpnVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 42:
+        return <Q42VpnTunnelSetupVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 43:
+        return <Q43SplitTunnelingVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 44:
+        return <Q44ZeroTrustVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 45:
+        return <Q45LeastPrivilegeVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 46:
+        return <Q46NacAccessVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 47:
+        return <Q47ForwardVsReverseProxyVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 48:
+        return <Q48WafVsNetworkFwVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 49:
+        return <Q49TroubleshootWebsiteVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
+      case 50:
+        return <Q50TroubleshootServerVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
       default:
         return <Q1FirewallFlowVisualizer currentStepIndex={currentStepIndex} step={step} totalSteps={totalSteps} />;
     }

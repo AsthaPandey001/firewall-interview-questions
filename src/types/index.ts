@@ -57,27 +57,7 @@ export interface QuestionData {
   category: string;
   title: string;
   subtitle: string;
-  visualType: 
-    | 'firewall-flow'
-    | 'firewall-types'
-    | 'stateful-stateless'
-    | 'ngfw-dpi'
-    | 'acl-matrix'
-    | 'decision-flowchart'
-    | 'rule-order-demo'
-    | 'multiple-match-demo'
-    | 'implicit-deny'
-    | 'scenario-simulator'
-    | 'nat-translation'
-    | 'nat-types'
-    | 'nat-firewall-order'
-    | 'ids-vs-ips'
-    | 'ids-placement'
-    | 'troubleshooting-flow'
-    | 'network-segmentation'
-    | 'vpn-architectures'
-    | 'ipsec-encapsulation'
-    | 'tls-handshake';
+  visualType: string;
   elevatorPitch: string;
   deepDive: string[];
   realWorldScenario: string;

@@ -1,6 +1,8 @@
 import type { QuestionData } from '../types';
+import { questions21to35 } from './questions_21_35';
+import { questions36to50 } from './questions_36_50';
 
-export const QUESTIONS_DATA: QuestionData[] = [
+const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 1. What is a firewall, and how does it work?
   {
     id: 1,
@@ -2848,3 +2850,11 @@ export const QUESTIONS_DATA: QuestionData[] = [
     ]
   }
 ];
+
+export const QUESTIONS_DATA: QuestionData[] = [
+  ...QUESTIONS_DATA_PART1,
+  ...questions21to35,
+  ...questions36to50,
+];
+
+export const questions = QUESTIONS_DATA;
