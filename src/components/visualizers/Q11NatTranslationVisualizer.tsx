@@ -71,20 +71,25 @@ export const Q11NatTranslationVisualizer: React.FC<Props> = ({ currentStepIndex 
         </>
       )}
 
-      {/* Device Nodes */}
+      {/* Device Nodes (Progressive Reveal) */}
       <LaptopNode cx={90} cy={80} label="PRIVATE LAPTOP" ip="192.168.1.10" active={currentStepIndex >= 1} success={isBackToHost} />
       
-      {/* NAT Router Gateway */}
-      <g transform="translate(370, 80)">
-        <circle cx="0" cy="-8" r="38" fill={isAtNat ? '#2563eb22' : 'transparent'} />
-        <rect x="-30" y="-30" width="60" height="42" rx="6" fill="#0f172a" stroke={isTranslated ? '#10b981' : '#2563eb'} strokeWidth={2.5} />
-        <path d="M -16 -10 L 16 -10 M 10 -16 L 16 -10 L 10 -4" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M 16 -2 L -16 -2 M -10 -8 L -16 -2 L -10 4" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <text x="0" y="24" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#0f172a">NAT ROUTER</text>
-        <text x="0" y="36" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#2563eb" fontFamily="monospace">203.0.113.10</text>
-      </g>
+      {/* NAT Router Gateway (Emerges on transit) */}
+      {currentStepIndex >= 1 && (
+        <g transform="translate(370, 80)" className="animate-pop-in">
+          <circle cx="0" cy="-8" r="38" fill={isAtNat ? '#2563eb22' : 'transparent'} />
+          <rect x="-30" y="-30" width="60" height="42" rx="6" fill="#0f172a" stroke={isTranslated ? '#10b981' : '#2563eb'} strokeWidth={2.5} />
+          <path d="M -16 -10 L 16 -10 M 10 -16 L 16 -10 L 10 -4" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 16 -2 L -16 -2 M -10 -8 L -16 -2 L -10 4" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <text x="0" y="24" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#0f172a">NAT ROUTER</text>
+          <text x="0" y="36" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#2563eb" fontFamily="monospace">203.0.113.10</text>
+        </g>
+      )}
 
-      <ServerNodeSVG cx={650} cy={80} label="WEB SERVER" sub="198.51.100.2:80" active={isDeliveredToServer} success={isDeliveredToServer} />
+      {/* Public Web Server (Emerges on public forwarding) */}
+      {currentStepIndex >= 3 && (
+        <ServerNodeSVG cx={650} cy={80} label="WEB SERVER" sub="198.51.100.2:80" active={isDeliveredToServer} success={isDeliveredToServer} />
+      )}
 
       {/* Packet Card (Only when currentStepIndex >= 1) */}
       {currentStepIndex >= 1 && (

@@ -67,7 +67,7 @@ export const Q1FirewallFlowVisualizer: React.FC<Props> = ({ currentStepIndex }) 
         />
       )}
 
-      {/* Device Nodes (Center Y = 95) */}
+      {/* Device Nodes (Center Y = 95 - Progressive Reveal) */}
       <LaptopNode
         cx={90}
         cy={95}
@@ -77,24 +77,28 @@ export const Q1FirewallFlowVisualizer: React.FC<Props> = ({ currentStepIndex }) 
         success={isDelivered}
       />
 
-      <FirewallGatewayNode
-        cx={370}
-        cy={95}
-        label="FIREWALL"
-        sub="Security Gateway"
-        active={isAtFirewall || currentStepIndex >= 3}
-        success={isAllowed}
-        scannerActive={currentStepIndex === 3 || currentStepIndex === 4 || currentStepIndex === 5}
-      />
+      {currentStepIndex >= 2 && (
+        <FirewallGatewayNode
+          cx={370}
+          cy={95}
+          label="FIREWALL"
+          sub="Security Gateway"
+          active={isAtFirewall || currentStepIndex >= 3}
+          success={isAllowed}
+          scannerActive={currentStepIndex === 3 || currentStepIndex === 4 || currentStepIndex === 5}
+        />
+      )}
 
-      <ServerNodeSVG
-        cx={650}
-        cy={95}
-        label="SERVER"
-        sub="203.0.113.50:443"
-        active={isDelivered}
-        success={isDelivered}
-      />
+      {currentStepIndex >= 8 && (
+        <ServerNodeSVG
+          cx={650}
+          cy={95}
+          label="SERVER"
+          sub="203.0.113.50:443"
+          active={isDelivered}
+          success={isDelivered}
+        />
+      )}
 
       {/* Moving Packet Card (Visible physical packet, floats comfortably above at Y=40) */}
       {isPacketCreated && currentStepIndex !== 9 && (

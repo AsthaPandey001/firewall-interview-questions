@@ -20,9 +20,11 @@ export const Q20TlsHandshakeVisualizer: React.FC<Props> = ({ currentStepIndex })
       {/* Network Baseline Line */}
       <line x1="120" y1="80" x2="640" y2="80" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="4 4" />
 
-      {/* Nodes: Client <-> Server */}
+      {/* Nodes: Client <-> Server (Progressive Step-by-Step Reveal) */}
       <LaptopNode cx={120} cy={80} label="CLIENT BROWSER" ip="192.168.1.100" active={currentStepIndex >= 1} success={isChannelSecure} />
-      <ServerNodeSVG cx={640} cy={80} label="HTTPS WEB SERVER" sub="example.com:443" active={currentStepIndex >= 1} success={isChannelSecure} />
+      {currentStepIndex >= 1 && (
+        <ServerNodeSVG cx={640} cy={80} label="HTTPS WEB SERVER" sub="example.com:443" active={currentStepIndex >= 1} success={isChannelSecure} />
+      )}
 
       {/* Step 1: ClientHello */}
       {isClientHello && (
