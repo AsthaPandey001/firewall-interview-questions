@@ -1,6 +1,6 @@
 import React from 'react';
 import type { AnimationStep } from '../../types';
-import { BoldArrow, LaptopNode, FirewallGatewayNode, ServerNodeSVG, PacketCard } from './VisualPrimitives';
+import { BoldArrow, LaptopNode, ServerNodeSVG, PacketCard } from './VisualPrimitives';
 
 interface Props {
   currentStepIndex: number;
@@ -9,174 +9,249 @@ interface Props {
 }
 
 export const Q45LeastPrivilegeVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Scenario 1: Authorized Resource under Least Privilege (Steps 0-4)
-  // Step 1: User / Support Tier-1 Technician appears
-  // Step 2: RBAC Policy Enforcement Firewall appears
-  // Step 3: Helpdesk Ticketing Web Server & Core SQL DB appear
-  // Step 4: User requests Ticketing System (TCP 443) -> Rule Match: Role=Helpdesk -> ALLOWED ✓
-  // Step 5: User successfully accesses Ticketing portal - STOP
-  //
-  // Scenario 2: Unauthorized High-Privilege Resource Attempt (Steps 5-9)
-  // Step 6: User attempts to connect to Production SQL Database (Port 1433 / 22 SSH)
-  // Step 7: Packet reaches Firewall
-  // Step 8: RBAC evaluation: Role=Helpdesk has no SQL/Admin entitlement
-  // Step 9: Firewall DENIES & logs unauthorized access attempt ✕
+  const showRbac = currentStepIndex >= 1;
+  const showResA = currentStepIndex >= 2;
+  const showResB = currentStepIndex >= 3;
+  const showCables = currentStepIndex >= 4;
 
-  const isUnauthorizedPhase = currentStepIndex >= 5;
+  const isScenario2Denied = currentStepIndex >= 10;
 
-  const showFw = currentStepIndex >= 1;
-  const showServers = currentStepIndex >= 2;
+  let packetX = -100;
+  let packetY = 55;
+  let showPacket = false;
+  let packetLabel = 'AUTH REQ';
+  let packetSub = 'Helpdesk Ticket';
+  let packetColor = '#0284c7';
 
-  const isTicketAllowed = currentStepIndex >= 3 && currentStepIndex <= 4;
-  const isDbBlocked = currentStepIndex >= 8;
+  if (currentStepIndex === 5 || currentStepIndex === 6) {
+    showPacket = true;
+    packetX = 230;
+    packetLabel = 'GET /tickets:443';
+    packetSub = 'Role: Helpdesk_Tier1';
+  } else if (currentStepIndex === 7) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'RBAC PERMIT ✓';
+    packetSub = '➔ Ticketing System';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 8 || currentStepIndex === 9) {
+    showPacket = true;
+    packetX = 650;
+    packetLabel = 'TICKETS SERVED ✓';
+    packetSub = 'Authorized Access';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 10 || currentStepIndex === 11) {
+    showPacket = true;
+    packetY = 105;
+    packetX = 230;
+    packetLabel = 'CONNECT SQL:1433';
+    packetSub = 'Production DB Query';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex === 12 || currentStepIndex === 13) {
+    showPacket = true;
+    packetY = 105;
+    packetX = 370;
+    packetLabel = 'MISSING PRIVILEGE ✕';
+    packetSub = 'Requires DBA_Admin Role';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex >= 14) {
+    showPacket = true;
+    packetY = 105;
+    packetX = 340;
+    packetLabel = 'ACCESS DENIED ✕';
+    packetSub = 'Blast Radius Contained';
+    packetColor = '#ef4444';
+  }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
       {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isUnauthorizedPhase ? '#fef2f2' : '#ecfdf5'} stroke={isUnauthorizedPhase ? '#f87171' : '#34d399'} />
-        <text x="340" y="16" textAnchor="middle" fill={isUnauthorizedPhase ? '#991b1b' : '#065f46'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isUnauthorizedPhase
-            ? 'ATTEMPT 2: SENSITIVE PROD DB ACCESS (TCP 1433) → NO ENTITLEMENT → BLOCKED ✕'
-            : 'ATTEMPT 1: ASSIGNED HELPDESK PORTAL (HTTPS 443) → ROLE MATCH → ALLOWED ✓'}
+      <g transform="translate(40, 10)">
+        <rect
+          x="0"
+          y="0"
+          width="680"
+          height="22"
+          rx="11"
+          fill={isScenario2Denied ? '#fef2f2' : '#eff6ff'}
+          stroke={isScenario2Denied ? '#fca5a5' : '#93c5fd'}
+        />
+        <text
+          x="340"
+          y="15"
+          textAnchor="middle"
+          fill={isScenario2Denied ? '#991b1b' : '#1e40af'}
+          fontSize="8.5"
+          fontWeight="bold"
+          fontFamily="monospace"
+        >
+          {isScenario2Denied
+            ? 'LEAST PRIVILEGE ENFORCED: HELPDESK USER DENIED ACCESS TO PRODUCTION SQL DB (PORT 1433) ✕'
+            : 'PRINCIPLE OF LEAST PRIVILEGE (PoLP): USERS RECEIVE ONLY EXACT MINIMAL ACCESS NEEDED FOR JOB FUNCTION'}
         </text>
       </g>
 
-      {/* Links */}
-      {showFw && (
-        <BoldArrow
-          from={{ x: 130, y: 170 }}
-          to={{ x: 330, y: 170 }}
-          color={isUnauthorizedPhase ? (isDbBlocked ? '#ef4444' : '#64748b') : (isTicketAllowed ? '#10b981' : '#3b82f6')}
-          dashed={currentStepIndex < 3}
-          label={currentStepIndex >= 3 ? (isUnauthorizedPhase ? 'DST: SQL DB (1433)' : 'DST: Helpdesk (443)') : undefined}
-        />
-      )}
+      {/* Network Cables */}
+      {showCables && (
+        <g opacity="0.6">
+          {/* Upper Cable to Ticketing */}
+          <line x1="120" y1="55" x2="330" y2="55" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          <line x1="410" y1="55" x2="610" y2="55" stroke="#10b981" strokeWidth="2" strokeDasharray="4,4" />
 
-      {showServers && (
-        <>
-          <BoldArrow
-            from={{ x: 450, y: 150 }}
-            to={{ x: 620, y: 110 }}
-            color={isTicketAllowed ? '#10b981' : '#94a3b8'}
-            dashed={!isTicketAllowed}
-            label={isTicketAllowed ? 'Allowed HTTPS' : undefined}
-          />
-          <BoldArrow
-            from={{ x: 450, y: 190 }}
-            to={{ x: 620, y: 240 }}
-            color={isDbBlocked ? '#ef4444' : '#94a3b8'}
-            dashed={true}
-            label={isDbBlocked ? '✕ Access Dropped' : 'Restricted Admin Path'}
-          />
-        </>
-      )}
-
-      {/* Client */}
-      <g transform="translate(40, 120)">
-        <LaptopNode
-          label="Helpdesk Analyst"
-          sublabel="Role: Tier-1 Support"
-          ip="IP: 10.10.20.45"
-        />
-      </g>
-
-      {/* Policy Firewall */}
-      {showFw && (
-        <g transform="translate(330, 110)">
-          <FirewallGatewayNode
-            label="RBAC Policy Firewall"
-            sublabel="Least Privilege Matrix"
-            status={isUnauthorizedPhase ? (isDbBlocked ? 'DENIED' : 'CHECKING') : (isTicketAllowed ? 'PERMIT' : 'READY')}
-          />
+          {/* Lower Cable to SQL */}
+          <line x1="120" y1="95" x2="330" y2="95" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          <line x1="410" y1="95" x2="610" y2="95" stroke="#ef4444" strokeWidth="2" strokeDasharray="4,4" />
         </g>
       )}
 
-      {/* Servers */}
-      {showServers && (
-        <>
-          <g transform="translate(620, 70)">
-            <ServerNodeSVG
-              label="Helpdesk Ticketing"
-              sublabel="10.20.10.10:443"
-              status={isTicketAllowed ? 'active' : 'standby'}
-            />
-            {isTicketAllowed && (
-              <g transform="translate(0, 70)">
-                <rect x="-10" y="0" width="100" height="18" rx="4" fill="#065f46" />
-                <text x="40" y="12" textAnchor="middle" fill="#a7f3d0" fontSize="8" fontWeight="bold">
-                  PERMITTED ✓
-                </text>
-              </g>
-            )}
+      {/* Transit arrows */}
+      {(currentStepIndex === 6 || currentStepIndex === 7) && (
+        <BoldArrow x1="120" y1="55" x2="610" y2="55" color="#10b981" label="TICKETING PERMITTED" />
+      )}
+      {currentStepIndex === 11 && (
+        <BoldArrow x1="120" y1="95" x2="330" y2="95" color="#ef4444" label="SQL REQUEST" />
+      )}
+
+      {/* Client User */}
+      <LaptopNode
+        cx={80}
+        cy={75}
+        label="IT HELPDESK AGENT"
+        ip="Role: Helpdesk_Tier1"
+        active
+        danger={isScenario2Denied}
+        success={currentStepIndex >= 7 && !isScenario2Denied}
+      />
+
+      {/* RBAC Policy Engine */}
+      {showRbac && (
+        <g transform="translate(370, 75)">
+          <rect
+            x="-44"
+            y="-25"
+            width="88"
+            height="42"
+            rx="6"
+            fill="#0f172a"
+            stroke={isScenario2Denied ? '#ef4444' : '#0284c7'}
+            strokeWidth={2}
+          />
+          <text x="0" y="-8" textAnchor="middle" fill="#38bdf8" fontSize="7.5" fontWeight="bold">RBAC ENGINE</text>
+          <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontFamily="monospace">IAM / PAM POLICIES</text>
+          <text x="0" y="22" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0f172a">AUTHORIZATION GATE</text>
+        </g>
+      )}
+
+      {/* Resource A: Helpdesk Ticketing */}
+      {showResA && (
+        <ServerNodeSVG
+          cx={650}
+          cy={55}
+          label="HELPDESK TICKETING"
+          sub="Port 443 (Authorized ✓)"
+          active
+          success={currentStepIndex >= 7 && !isScenario2Denied}
+        />
+      )}
+
+      {/* Resource B: Production SQL DB */}
+      {showResB && (
+        <ServerNodeSVG
+          cx={650}
+          cy={105}
+          label="PRODUCTION SQL DB"
+          sub="Port 1433 (Admin Only ✕)"
+          active
+          danger={isScenario2Denied}
+        />
+      )}
+
+      {/* Moving Packet */}
+      {showPacket && (
+        <PacketCard
+          cx={packetX}
+          cy={packetY}
+          label={packetLabel}
+          sub={packetSub}
+          color={packetColor}
+          dropped={isScenario2Denied && currentStepIndex >= 14}
+        />
+      )}
+
+      {/* Drop marker */}
+      {isScenario2Denied && currentStepIndex >= 14 && (
+        <g transform="translate(330, 95)">
+          <line x1="-12" y1="-12" x2="12" y2="12" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
+          <line x1="12" y1="-12" x2="-12" y2="12" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
+        </g>
+      )}
+
+      {/* Bottom Technical Breakdown Panel */}
+      <g transform="translate(30, 140)">
+        <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+        <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
+        <text x="16" y="17" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+          ROLE-BASED ACCESS CONTROL (RBAC) MATRIX &amp; PRIVILEGE BOUNDARIES
+        </text>
+
+        {/* Left: Role Permission Table */}
+        <g transform="translate(16, 36)">
+          <rect x="0" y="0" width="325" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="10" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">ENTERPRISE IAM PERMISSION MATRIX:</text>
+
+          <g transform="translate(8, 24)">
+            <rect x="0" y="0" width="309" height="20" rx="3" fill="#0f172a" />
+            <text x="10" y="14" fill="#38bdf8" fontSize="7" fontFamily="monospace">Role Name         Target Resource      Port   Permission</text>
+
+            <rect x="0" y="24" width="309" height="22" rx="3" fill="#dcfce7" stroke="#86efac" />
+            <text x="10" y="38" fill="#059669" fontSize="7.5" fontFamily="monospace">Helpdesk_Tier1    Helpdesk Ticketing   443    ALLOW ✓</text>
+
+            <rect x="0" y="48" width="309" height="22" rx="3" fill="#dcfce7" stroke="#86efac" />
+            <text x="10" y="62" fill="#059669" fontSize="7.5" fontFamily="monospace">Helpdesk_Tier1    AD Password Reset    636    ALLOW ✓</text>
+
+            <rect x="0" y="72" width="309" height="24" rx="3" fill={isScenario2Denied ? '#fee2e2' : '#ffffff'} stroke={isScenario2Denied ? '#fca5a5' : '#e2e8f0'} />
+            <text x="10" y="88" fill={isScenario2Denied ? '#991b1b' : '#64748b'} fontSize="7.5" fontFamily="monospace">Helpdesk_Tier1    Production SQL DB    1433   DENY ✕ (Missing DBA_Admin)</text>
           </g>
 
-          <g transform="translate(620, 200)">
-            <ServerNodeSVG
-              label="Prod SQL Database"
-              sublabel="10.50.1.100:1433"
-              status={isDbBlocked ? 'threat' : 'standby'}
-            />
-            {isDbBlocked && (
-              <g transform="translate(0, 70)">
-                <rect x="-10" y="0" width="100" height="18" rx="4" fill="#7f1d1d" />
-                <text x="40" y="12" textAnchor="middle" fill="#fecaca" fontSize="8" fontWeight="bold">
-                  FORBIDDEN ✕
-                </text>
-              </g>
-            )}
+          <text x="10" y="132" fill="#64748b" fontSize="7.5">
+            Audit State: <tspan fill={isScenario2Denied ? '#b91c1c' : '#059669'} fontWeight="bold">{isScenario2Denied ? 'Privilege Escalation Attempt Blocked &amp; Logged' : 'Normal Authorized Operations'}</tspan>
+          </text>
+        </g>
+
+        {/* Right: Security Blast Radius Breakdown */}
+        <g transform="translate(355, 36)">
+          <rect x="0" y="0" width="330" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="12" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">BLAST RADIUS REDUCTION PRINCIPLES:</text>
+
+          <g transform="translate(12, 24)">
+            <rect x="0" y="0" width="306" height="48" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">1. Credential Compromise Containment:</text>
+            <text x="10" y="27" fill="#475569" fontSize="7">Even if an attacker phishes the Helpdesk Agent credentials,</text>
+            <text x="10" y="39" fill="#059669" fontSize="7">they CANNOT access the production SQL database.</text>
           </g>
-        </>
-      )}
 
-      {/* Packets */}
-      {currentStepIndex === 3 && (
-        <PacketCard
-          x={210}
-          y={145}
-          title="REQUEST: HELPDESK"
-          src="10.10.20.45 (Tier-1)"
-          dst="10.20.10.10:443"
-          detail="Role Entitlement: Helpdesk Allowed"
-          type="allow"
-        />
-      )}
+          <g transform="translate(12, 76)">
+            <rect x="0" y="0" width="306" height="56" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">2. Just-In-Time (JIT) &amp; PAM Elevation:</text>
+            <text x="10" y="27" fill="#475569" fontSize="7">• Admins should not have permanent root/DBA privileges.</text>
+            <text x="10" y="39" fill="#475569" fontSize="7">• Request temporary elevation via Privileged Access Management (PAM).</text>
+            <text x="10" y="50" fill="#0284c7" fontSize="7" fontWeight="bold">✔ Time-bound (e.g., 2 hours) with full session recording.</text>
+          </g>
+        </g>
+      </g>
 
-      {currentStepIndex === 4 && (
-        <PacketCard
-          x={510}
-          y={95}
-          title="DELIVERED TO APP"
-          src="Tier-1 Analyst"
-          dst="Ticketing Portal"
-          detail="Session Established Successfully"
-          type="allow"
-        />
-      )}
-
-      {currentStepIndex === 6 && (
-        <PacketCard
-          x={190}
-          y={145}
-          title="REQUEST: PROD DB"
-          src="10.10.20.45 (Tier-1)"
-          dst="10.50.1.100:1433"
-          detail="Target: Restricted Admin Asset"
-          type="deny"
-        />
-      )}
-
-      {currentStepIndex >= 7 && isUnauthorizedPhase && (
-        <PacketCard
-          x={340}
-          y={235}
-          title={isDbBlocked ? "DENIED BY LEAST PRIVILEGE RULE" : "EVALUATING ENTITLEMENTS"}
-          src="Tier-1 Analyst"
-          dst="Prod DB (1433)"
-          detail="Policy Violation: User lacks DBA role"
-          type="deny"
-        />
-      )}
+      {/* Compact Status Indicator */}
+      <g transform="translate(40, 324)">
+        <text x="340" y="10" textAnchor="middle" fill="#64748b" fontSize="8" fontFamily="monospace">
+          {currentStepIndex >= 14
+            ? 'RESULT: ✓ LEAST PRIVILEGE PREVENTED UNAUTHORIZED SQL ACCESS — ZERO COMPROMISE'
+            : currentStepIndex >= 10
+            ? 'SCENARIO 2: USER ATTEMPTS UNAUTHORIZED PRODUCTION SQL ACCESS (PORT 1433)'
+            : currentStepIndex >= 7
+            ? 'SCENARIO 1: ✓ AUTHORIZED ACCESS TO HELPDESK TICKETING GRANTED'
+            : 'READY — ADVANCE STEP TO TRACE PRINCIPLE OF LEAST PRIVILEGE ENFORCEMENT'}
+        </text>
+      </g>
     </svg>
   );
 };

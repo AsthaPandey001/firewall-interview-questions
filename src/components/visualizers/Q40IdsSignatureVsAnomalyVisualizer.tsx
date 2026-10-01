@@ -9,112 +9,260 @@ interface Props {
 }
 
 export const Q40IdsSignatureVsAnomalyVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Part A: SIGNATURE-BASED IDS (Steps 0-5)
-  // Step 1: Traffic stream arrives
-  // Step 2: Signature IDS sensor appears with known CVE rules (Snort/Suricata)
-  // Step 3: Known exploit packet arrives (e.g. Apache Struts OGNL)
-  // Step 4: IDS compares payload byte strings against CVE database
-  // Step 5: Exact Signature Match -> CRITICAL SECURITY ALERT generated! - STOP
-  //
-  // Part B: ANOMALY-BASED IDS (Steps 6-11)
-  // Step 6: Anomaly-Based IDS sensor appears with statistical machine-learning baseline
-  // Step 7: Zero-day unknown exploit arrives with unusual packet volume / protocol divergence
-  // Step 8: Signature engine finds zero matches (Signature Blind!)
-  // Step 9: Anomaly engine detects significant statistical deviation (>4 standard deviations from baseline)
-  // Step 10: Anomaly Alert generated: "Abnormal traffic profile / Protocol Anomaly Detected!"
-  // Step 11: Summary Comparison: Known Patterns vs Behavioral Outliers
+  const showIds = currentStepIndex >= 1;
+  const showNetwork = currentStepIndex >= 2;
+  const showCables = currentStepIndex >= 3;
 
-  const isAnomalyPhase = currentStepIndex >= 5;
+  const isPartBAnomaly = currentStepIndex >= 9;
 
-  const isSigAlert = currentStepIndex >= 3 && currentStepIndex <= 4;
-  const isAnomalyAlert = currentStepIndex >= 8;
+  let packetX = -100;
+  let packetY = 75;
+  let showPacket = false;
+  let packetLabel = 'INSPECTING';
+  let packetSub = 'Packet Payload';
+  let packetColor = '#0284c7';
+
+  if (currentStepIndex === 4) {
+    showPacket = true;
+    packetX = 90;
+    packetLabel = 'EXPLOIT: LOG4J';
+    packetSub = '${jndi:ldap://...}';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex === 5) {
+    showPacket = true;
+    packetX = 230;
+    packetLabel = 'CVE-2021-44228';
+    packetSub = '➔ IDS Inspection Engine';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex === 6 || currentStepIndex === 7) {
+    showPacket = true;
+    packetX = 370;
+    packetLabel = 'SIGNATURE MATCH!';
+    packetSub = 'Snort SID: 203432';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex === 8) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'ALERT ➔ SIEM';
+    packetSub = 'Passive Tap Logged';
+    packetColor = '#f59e0b';
+  } else if (currentStepIndex === 11) {
+    showPacket = true;
+    packetX = 90;
+    packetLabel = 'NORMAL BASELINE';
+    packetSub = '50 req/min (Normal)';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 12 || currentStepIndex === 13) {
+    showPacket = true;
+    packetX = 230;
+    packetLabel = 'ZERO-DAY TUNNEL';
+    packetSub = '500MB DNS Outbound (3 AM)';
+    packetColor = '#8b5cf6';
+  } else if (currentStepIndex === 14 || currentStepIndex === 15) {
+    showPacket = true;
+    packetX = 370;
+    packetLabel = 'ANOMALY DETECTED!';
+    packetSub = 'Z-Score: +4.8σ Drift';
+    packetColor = '#8b5cf6';
+  } else if (currentStepIndex >= 16) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'HEURISTIC ALERT';
+    packetSub = 'Zero-Day Flagged ✓';
+    packetColor = '#8b5cf6';
+  }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
       {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isAnomalyPhase ? '#faf5ff' : '#eff6ff'} stroke={isAnomalyPhase ? '#c084fc' : '#93c5fd'} />
-        <text x="340" y="16" textAnchor="middle" fill={isAnomalyPhase ? '#6b21a8' : '#1e40af'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isAnomalyPhase
-            ? 'PART B: ANOMALY-BASED IDS (BEHAVIORAL / ML BASELINE DETECTS ZERO-DAY OUTLIERS)'
-            : 'PART A: SIGNATURE-BASED IDS (PATTERN MATCHING DETECTS KNOWN CVE SIGNATURES)'}
+      <g transform="translate(40, 10)">
+        <rect
+          x="0"
+          y="0"
+          width="680"
+          height="22"
+          rx="11"
+          fill={isPartBAnomaly ? '#f5f3ff' : '#eff6ff'}
+          stroke={isPartBAnomaly ? '#c4b5fd' : '#93c5fd'}
+        />
+        <text
+          x="340"
+          y="15"
+          textAnchor="middle"
+          fill={isPartBAnomaly ? '#6d28d9' : '#1e40af'}
+          fontSize="8.5"
+          fontWeight="bold"
+          fontFamily="monospace"
+        >
+          {isPartBAnomaly
+            ? 'PART B: BEHAVIORAL ANOMALY DETECTION — STATISTICAL DRIFT &amp; ZERO-DAY THREAT DETECTION ✓'
+            : 'PART A: SIGNATURE-BASED DETECTION — DETERMINISTIC PATTERN MATCHING AGAINST KNOWN CVEs ✓'}
         </text>
       </g>
 
-      {/* Nodes: Traffic -> IDS Sensor -> SIEM Alert */}
+      {/* Network Cables */}
+      {showCables && (
+        <g opacity="0.6">
+          <line x1="120" y1="75" x2="330" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          <line x1="410" y1="75" x2="610" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+        </g>
+      )}
+
+      {/* Transit arrows */}
+      {(currentStepIndex === 5 || currentStepIndex === 13) && (
+        <BoldArrow x1="120" y1="75" x2="330" y2="75" color={isPartBAnomaly ? '#8b5cf6' : '#ef4444'} label={isPartBAnomaly ? 'ANOMALOUS DATA' : 'EXPLOIT PAYLOAD'} />
+      )}
+      {(currentStepIndex === 8 || currentStepIndex >= 16) && (
+        <BoldArrow x1="410" y1="75" x2="610" y2="75" color="#f59e0b" label="ALERT DISPATCH" />
+      )}
+
+      {/* Source Device */}
       <LaptopNode
-        cx={90}
+        cx={80}
         cy={75}
-        label={isAnomalyPhase ? 'ZERO-DAY ATTACK' : 'KNOWN CVE ATTACK'}
-        ip={isAnomalyPhase ? '198.51.100.99' : '198.51.100.22'}
+        label={isPartBAnomaly ? 'ANOMALOUS SOURCE' : 'ATTACK SOURCE'}
+        ip={isPartBAnomaly ? 'Zero-Day / DNS Tunnel' : 'Known Log4j Payload'}
         active
         danger
       />
 
-      <g transform="translate(370, 75)">
-        <rect x="-55" y="-30" width="110" height="48" rx="8" fill="#0f172a" stroke={isAnomalyPhase ? '#a855f7' : '#0284c7'} strokeWidth={2} />
-        <text x="0" y="-12" textAnchor="middle" fill={isAnomalyPhase ? '#c084fc' : '#38bdf8'} fontSize="8" fontWeight="bold">
-          {isAnomalyPhase ? 'ANOMALY SENSOR' : 'SIGNATURE SENSOR'}
-        </text>
-        <text x="0" y="3" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="monospace">
-          {isAnomalyPhase ? 'Heuristic Model' : 'Snort / Suricata'}
-        </text>
-        <text x="0" y="24" textAnchor="middle" fontSize="9.5" fontWeight="bold" fill="#0f172a">IDS SENSOR</text>
-      </g>
-
-      <ServerNodeSVG cx={650} cy={75} label="SOC / SIEM DASHBOARD" sub="Security Event Stream" active success={isSigAlert || isAnomalyAlert} />
-
-      {/* Traffic Arrows */}
-      {!isAnomalyPhase ? (
-        <>
-          {currentStepIndex >= 1 && currentStepIndex <= 2 && (
-            <BoldArrow x1={130} y1={75} x2={310} y2={75} color="#ef4444" label="CVE-2017-5638" />
-          )}
-          {isSigAlert && (
-            <BoldArrow x1={430} y1={75} x2={610} y2={75} color="#ef4444" label="🚨 SIGNATURE ALERT" />
-          )}
-        </>
-      ) : (
-        <>
-          {currentStepIndex >= 6 && currentStepIndex <= 7 && (
-            <BoldArrow x1={130} y1={75} x2={310} y2={75} color="#a855f7" label="ZERO-DAY EXPLOIT" />
-          )}
-          {isAnomalyAlert && (
-            <BoldArrow x1={430} y1={75} x2={610} y2={75} color="#a855f7" label="⚠️ ANOMALY ALERT" />
-          )}
-        </>
+      {/* IDS Engine */}
+      {showIds && (
+        <g transform="translate(370, 75)">
+          <rect
+            x="-48"
+            y="-30"
+            width="96"
+            height="46"
+            rx="8"
+            fill="#0f172a"
+            stroke={isPartBAnomaly ? '#8b5cf6' : '#ef4444'}
+            strokeWidth={2}
+          />
+          <text x="0" y="-10" textAnchor="middle" fill="#38bdf8" fontSize="8" fontWeight="bold">IDS ENGINE</text>
+          <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="monospace">
+            {isPartBAnomaly ? 'BEHAVIORAL ML' : 'SNORT / SURICATA'}
+          </text>
+          <text x="0" y="26" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#0f172a">INTRUSION DETECTION</text>
+        </g>
       )}
 
-      {/* Lower Comparative Detection Engine Matrix */}
+      {/* SIEM / Protected Network */}
+      {showNetwork && (
+        <ServerNodeSVG
+          cx={650}
+          cy={75}
+          label="ENTERPRISE SIEM"
+          sub="Splunk / Sentinel Alert Log"
+          active
+          success={currentStepIndex === 8 || currentStepIndex >= 16}
+        />
+      )}
+
+      {/* Moving Packet */}
+      {showPacket && (
+        <PacketCard
+          cx={packetX}
+          cy={packetY}
+          label={packetLabel}
+          sub={packetSub}
+          color={packetColor}
+        />
+      )}
+
+      {/* Bottom Technical Breakdown Panel */}
       <g transform="translate(30, 140)">
         <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
-        <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          SIGNATURE-BASED vs ANOMALY-BASED INTRUSION DETECTION ENGINES
+        <text x="16" y="17" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+          IDS DETECTION MATRIX: SIGNATURE RULE EVALUATION VS STATISTICAL ANOMALY BASELINING
         </text>
 
+        {/* Left: Signature Table vs Anomaly Graph */}
         <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="325" height="98" rx="6" fill={!isAnomalyPhase ? '#eff6ff' : '#f8fafc'} stroke={!isAnomalyPhase ? '#93c5fd' : '#cbd5e1'} strokeWidth={!isAnomalyPhase ? 2 : 1} />
-          <text x="10" y="16" fill="#1e40af" fontSize="8.5" fontWeight="bold">SIGNATURE-BASED DETECTION (Known Rules):</text>
-          <text x="12" y="34" fill="#0f172a" fontSize="7.5">How it works: Matches specific regex string / byte hashes.</text>
-          <text x="12" y="48" fill="#059669" fontSize="7.5" fontWeight="bold">Advantage: Extremely low false-positive rate; exact CVE match.</text>
-          <text x="12" y="62" fill="#dc2626" fontSize="7.5">Limitation: Blind to zero-days, polymorphic code & modified exploits.</text>
-          <text x="12" y="80" fill="#64748b" fontSize="7" fontFamily="monospace">Example: Snort SID: 2000001 (Apache Log4j)</text>
+          <rect x="0" y="0" width="325" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="10" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">
+            {isPartBAnomaly ? 'BEHAVIORAL BASELINE DEVIATION METRIC:' : 'SNORT CVE SIGNATURE DATABASE MATCH:'}
+          </text>
 
-          <rect x="345" y="0" width="325" height="98" rx="6" fill={isAnomalyPhase ? '#faf5ff' : '#f8fafc'} stroke={isAnomalyPhase ? '#c084fc' : '#cbd5e1'} strokeWidth={isAnomalyPhase ? 2 : 1} />
-          <text x="355" y="16" fill="#6b21a8" fontSize="8.5" fontWeight="bold">ANOMALY-BASED DETECTION (Behavioral / ML):</text>
-          <text x="359" y="34" fill="#0f172a" fontSize="7.5">How it works: Establishes statistical baseline of normal network flow.</text>
-          <text x="359" y="48" fill="#059669" fontSize="7.5" fontWeight="bold">Advantage: Detects novel zero-day exploits & insider data theft.</text>
-          <text x="359" y="62" fill="#dc2626" fontSize="7.5">Limitation: Higher false-positive rate during legitimate network spikes.</text>
-          <text x="359" y="80" fill="#64748b" fontSize="7" fontFamily="monospace">Example: Alert on 10x spike in outbound ICMP traffic</text>
-        </g>
+          {!isPartBAnomaly ? (
+            <g transform="translate(8, 26)">
+              <rect x="0" y="0" width="309" height="20" rx="3" fill="#ffffff" stroke="#e2e8f0" />
+              <text x="10" y="13" fill="#64748b" fontSize="7" fontFamily="monospace">SID     CVE / Threat Pattern           Status    Action</text>
 
-        <g transform="translate(16, 142)">
-          <rect x="0" y="0" width="668" height="38" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="14" y="15" fill="#1e40af" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            BEST PRACTICE: Modern Next-Gen IPS solutions run hybrid engines (Signatures for fast known CVE blocking + Machine Learning for zero-day anomaly detection).
+              <rect x="0" y="24" width="309" height="22" rx="3" fill={currentStepIndex >= 6 ? '#fee2e2' : '#ffffff'} stroke={currentStepIndex >= 6 ? '#fca5a5' : '#e2e8f0'} />
+              <text x="10" y="38" fill="#0f172a" fontSize="7.5" fontFamily="monospace">203432  Log4j jndi:ldap:// regex       MATCHED   ALERT ⚠</text>
+
+              <rect x="0" y="48" width="309" height="22" rx="3" fill="#ffffff" stroke="#e2e8f0" />
+              <text x="10" y="62" fill="#64748b" fontSize="7.5" fontFamily="monospace">201201  EternalBlue SMB MS17-010       NO_MATCH  IGNORE</text>
+
+              <rect x="0" y="72" width="309" height="34" rx="3" fill="#f1f5f9" stroke="#cbd5e1" />
+              <text x="10" y="86" fill="#0f172a" fontSize="7" fontWeight="bold">Signature Principle:</text>
+              <text x="10" y="98" fill="#475569" fontSize="6.8">Deterministic byte pattern match. Cannot detect unknown Zero-Days.</text>
+            </g>
+          ) : (
+            <g transform="translate(8, 26)">
+              <rect x="0" y="0" width="309" height="22" rx="3" fill="#ffffff" stroke="#e2e8f0" />
+              <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontFamily="monospace">Baseline (Normal): 50 req/min | Port 53: 20 KB/hr</text>
+
+              <rect x="0" y="26" width="309" height="22" rx="3" fill="#f5f3ff" stroke="#c4b5fd" />
+              <text x="10" y="40" fill="#6d28d9" fontSize="7.5" fontFamily="monospace">Observed: 3:00 AM DNS Egress ➔ 500 MB (Z=+4.8σ)</text>
+
+              <rect x="0" y="52" width="309" height="54" rx="3" fill="#fef2f2" stroke="#fca5a5" />
+              <text x="10" y="66" fill="#991b1b" fontSize="7.5" fontWeight="bold">ANOMALY ENGINE VERDICT: NOVEL ZERO-DAY DETECTED</text>
+              <text x="10" y="80" fill="#475569" fontSize="6.8">• No known CVE signature matched payload.</text>
+              <text x="10" y="94" fill="#475569" fontSize="6.8">• Statistical outlier flags covert exfiltration channel.</text>
+            </g>
+          )}
+
+          <text x="10" y="132" fill="#64748b" fontSize="7.5">
+            Engine State: <tspan fill={isPartBAnomaly ? '#6d28d9' : '#b91c1c'} fontWeight="bold">{isPartBAnomaly ? 'ML Statistical Profiler' : 'Static String/Byte Classifier'}</tspan>
           </text>
         </g>
+
+        {/* Right: Technical Comparison & Trade-offs */}
+        <g transform="translate(355, 36)">
+          <rect x="0" y="0" width="330" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="12" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">DETECTION PARADIGM COMPARISON:</text>
+
+          <g transform="translate(12, 24)">
+            <rect x="0" y="0" width="306" height="48" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">1. Signature-Based (Snort/Suricata):</text>
+            <text x="10" y="27" fill="#475569" fontSize="7">
+              ✔ Near 0% False Positives for known exploits.
+            </text>
+            <text x="10" y="39" fill="#b91c1c" fontSize="7">
+              ✕ 100% Blind to new Zero-Days and polymorphic mutations.
+            </text>
+          </g>
+
+          <g transform="translate(12, 76)">
+            <rect x="0" y="0" width="306" height="56" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">2. Anomaly-Based (Behavioral ML / UEBA):</text>
+            <text x="10" y="27" fill="#059669" fontSize="7">
+              ✔ Catches novel Zero-Days and internal data exfiltration.
+            </text>
+            <text x="10" y="39" fill="#b45309" fontSize="7">
+              ⚠ Higher False Positives when legitimate business patterns shift.
+            </text>
+            <text x="10" y="50" fill="#6d28d9" fontSize="7" fontWeight="bold">
+              ✔ Modern NGFW/NDR deploys BOTH in parallel!
+            </text>
+          </g>
+        </g>
+      </g>
+
+      {/* Compact Status Indicator */}
+      <g transform="translate(40, 324)">
+        <text x="340" y="10" textAnchor="middle" fill="#64748b" fontSize="8" fontFamily="monospace">
+          {currentStepIndex >= 16
+            ? 'RESULT: ✓ HYBRID IDS COMPLETE — KNOWN EXPLOITS CAUGHT VIA SIGNATURES, ZERO-DAYS VIA ANOMALY'
+            : currentStepIndex >= 9
+            ? 'PART B: EVALUATING STATISTICAL ANOMALY &amp; ZERO-DAY EXFILTRATION'
+            : currentStepIndex >= 4
+            ? 'PART A: EVALUATING DETERMINISTIC LOG4J CVE SIGNATURE'
+            : 'READY — ADVANCE STEP TO TRACE SIGNATURE VS ANOMALY DETECTION'}
+        </text>
       </g>
     </svg>
   );

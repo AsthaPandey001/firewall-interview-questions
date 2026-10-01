@@ -9,110 +9,262 @@ interface Props {
 }
 
 export const Q39DdosScrubbingVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Step 1: Normal Users stream appears
-  // Step 2: Attack Botnet sources appear
-  // Step 3: Combined traffic converges toward Cloud Scrubbing Protection Layer
-  // Step 4: Scrubbing Center receives multi-gigabit traffic stream
-  // Step 5: Normal user traffic identified via behavioral analysis & CAPTCHA/challenge
-  // Step 6: Malicious attack traffic identified (UDP Amplification, HTTP Flood)
-  // Step 7: Clean legitimate traffic forwarded to Origin Web Server
-  // Step 8: Malicious attack packets dropped / blackholed at cloud edge
-  // Step 9: Protected Origin Server stays online with zero downtime (100% Availability ✓)
+  const showScrubCenter = currentStepIndex >= 1;
+  const showLegitUsers = currentStepIndex >= 2;
+  const showBotnet = currentStepIndex >= 3;
+  const showCables = currentStepIndex >= 4;
 
-  const showBotnet = currentStepIndex >= 1;
-  const showScrubbing = currentStepIndex >= 2;
-  const showOrigin = currentStepIndex >= 3;
+  const isAttackPhase = currentStepIndex >= 8;
 
-  const isDdosActive = currentStepIndex >= 3 && currentStepIndex <= 5;
-  const isCleanDelivered = currentStepIndex >= 6;
+  let packetX = -100;
+  let packetY = 75;
+  let showPacket = false;
+  let packetLabel = 'HTTPS';
+  let packetSub = 'Clean Request';
+  let packetColor = '#0284c7';
+
+  if (currentStepIndex === 5) {
+    showPacket = true;
+    packetX = 90;
+    packetLabel = 'HTTPS GET';
+    packetSub = 'User ➔ Anycast PoP';
+  } else if (currentStepIndex === 6) {
+    showPacket = true;
+    packetX = 370;
+    packetLabel = 'CLEAN FILTERED';
+    packetSub = 'Passed to Tunnel';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 7) {
+    showPacket = true;
+    packetX = 650;
+    packetLabel = 'ORIGIN SERVING';
+    packetSub = 'HTTP 200 OK';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 8 || currentStepIndex === 9) {
+    showPacket = true;
+    packetX = 230;
+    packetLabel = '500 Gbps FLOOD';
+    packetSub = 'UDP / SYN Wave';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex === 10 || currentStepIndex === 11) {
+    showPacket = true;
+    packetX = 370;
+    packetLabel = 'DPI FILTERING';
+    packetSub = 'BGP Flowspec Drop';
+    packetColor = '#f59e0b';
+  } else if (currentStepIndex === 12 || currentStepIndex === 13) {
+    showPacket = true;
+    packetX = 330;
+    packetLabel = '99.9% ATTACK DROPPED';
+    packetSub = 'Cloud Edge Scrubbed ✕';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex >= 14 && currentStepIndex <= 17) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'CLEAN PIPE: 15 Mbps';
+    packetSub = 'GRE Tunnel to Origin';
+    packetColor = '#10b981';
+  }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
       {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isCleanDelivered ? '#f0fdf4' : isDdosActive ? '#fef2f2' : '#eff6ff'} stroke={isCleanDelivered ? '#86efac' : isDdosActive ? '#fca5a5' : '#93c5fd'} />
-        <text x="340" y="16" textAnchor="middle" fill={isCleanDelivered ? '#047857' : isDdosActive ? '#991b1b' : '#1e40af'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isCleanDelivered
-            ? 'DDoS SCRUBBED: MALICIOUS VOLUMETRIC NOISE FILTERED AT CLOUD EDGE ➔ CLEAN TRAFFIC DELIVERED ✓'
-            : isDdosActive
-            ? '500 Gbps VOLUMETRIC DDoS ATTACK CONVERGING ON SCRUBBING CENTER'
-            : 'DDoS SCRUBBING ARCHITECTURE & CLOUD TRAFFIC FILTERING'}
+      <g transform="translate(40, 10)">
+        <rect
+          x="0"
+          y="0"
+          width="680"
+          height="22"
+          rx="11"
+          fill={isAttackPhase ? '#fef2f2' : '#eff6ff'}
+          stroke={isAttackPhase ? '#fca5a5' : '#93c5fd'}
+        />
+        <text
+          x="340"
+          y="15"
+          textAnchor="middle"
+          fill={isAttackPhase ? '#991b1b' : '#1e40af'}
+          fontSize="8.5"
+          fontWeight="bold"
+          fontFamily="monospace"
+        >
+          {isAttackPhase
+            ? 'DDOS ATTACK (500 Gbps) ABSORBED AT CLOUD ANYCAST EDGE ➔ CLEAN PIPE (15 Mbps) FORWARDED TO ORIGIN ✓'
+            : 'DDOS SCRUBBING ARCHITECTURE: CLOUD ANYCAST INGESTION &amp; VOLUMETRIC ATTACK MITIGATION'}
         </text>
       </g>
 
-      {/* Nodes: Normal Users & Botnet -> Scrubbing Center -> Origin Server */}
-      <g transform="translate(80, 50)">
-        <LaptopNode cx={0} cy={0} label="LEGITIMATE USERS" ip="USERS_WAN" active success={isCleanDelivered} />
+      {/* Network Cables */}
+      {showCables && (
+        <g opacity="0.6">
+          <line x1="120" y1="75" x2="330" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          <line x1="410" y1="75" x2="610" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+        </g>
+      )}
+
+      {/* Transit arrows */}
+      {(currentStepIndex === 5 || currentStepIndex === 8) && (
+        <BoldArrow x1="120" y1="75" x2="330" y2="75" color={currentStepIndex === 8 ? '#ef4444' : '#0284c7'} label={currentStepIndex === 8 ? '500 Gbps ATTACK' : 'USER TRAFFIC'} />
+      )}
+      {(currentStepIndex === 6 || currentStepIndex >= 14) && (
+        <BoldArrow x1="410" y1="75" x2="610" y2="75" color="#10b981" label="CLEAN PIPE TUNNEL" />
+      )}
+
+      {/* Source Devices */}
+      <g transform="translate(80, 75)">
+        {showBotnet && isAttackPhase ? (
+          <LaptopNode
+            cx={0}
+            cy={0}
+            label="BOTNET (50,000 NODES)"
+            ip="UDP Amplification &amp; SYN Flood"
+            active
+            danger
+          />
+        ) : showLegitUsers ? (
+          <LaptopNode
+            cx={0}
+            cy={0}
+            label="LEGITIMATE USERS"
+            ip="Clean Web Browsing (HTTPS)"
+            active
+            success
+          />
+        ) : (
+          <LaptopNode
+            cx={0}
+            cy={0}
+            label="TRAFFIC CLIENTS"
+            ip="Public Internet Hosts"
+            active
+          />
+        )}
       </g>
 
-      {showBotnet && (
-        <g transform="translate(80, 105)">
-          <LaptopNode cx={0} cy={0} label="BOTNET ATTACKERS" ip="100k_BOTS" active danger />
-        </g>
-      )}
-
-      {showScrubbing && (
+      {/* Scrubbing Cloud PoP */}
+      {showScrubCenter && (
         <g transform="translate(370, 75)">
-          <rect x="-55" y="-30" width="110" height="48" rx="8" fill="#0f172a" stroke="#8b5cf6" strokeWidth={2} />
-          <text x="0" y="-12" textAnchor="middle" fill="#c084fc" fontSize="8" fontWeight="bold">CLOUD SCRUBBING</text>
-          <text x="0" y="3" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="monospace">Anycast BGP / WAF</text>
-          <text x="0" y="24" textAnchor="middle" fontSize="9.5" fontWeight="bold" fill="#0f172a">SCRUBBING</text>
+          <rect
+            x="-48"
+            y="-30"
+            width="96"
+            height="46"
+            rx="8"
+            fill="#0f172a"
+            stroke={isAttackPhase ? '#10b981' : '#0284c7'}
+            strokeWidth={2}
+          />
+          <text x="0" y="-10" textAnchor="middle" fill="#38bdf8" fontSize="8" fontWeight="bold">CLOUD SCRUBBING</text>
+          <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="7" fontFamily="monospace">
+            {isAttackPhase ? 'SCRUBBING 99.9%' : 'ANYCAST POP'}
+          </text>
+          <text x="0" y="26" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#0f172a">CLOUDFLARE / AKAMAI</text>
         </g>
       )}
 
-      {showOrigin && (
-        <ServerNodeSVG cx={650} cy={75} label="ORIGIN WEB SERVER" sub="10.0.1.50:443" active success={isCleanDelivered} />
+      {/* Origin Server */}
+      <ServerNodeSVG
+        cx={650}
+        cy={75}
+        label="ORIGIN DATA CENTER"
+        sub="CPU: 12% | Bandwidth: 15 Mbps"
+        active
+        success
+      />
+
+      {/* Moving Packet */}
+      {showPacket && (
+        <PacketCard
+          cx={packetX}
+          cy={packetY}
+          label={packetLabel}
+          sub={packetSub}
+          color={packetColor}
+          dropped={currentStepIndex === 12 || currentStepIndex === 13}
+        />
       )}
 
-      {/* Arrows */}
-      {isDdosActive && (
-        <>
-          <BoldArrow x1={120} y1={50} x2={310} y2={70} color="#2563eb" label="USER TRAFFIC" />
-          <BoldArrow x1={120} y1={105} x2={310} y2={80} color="#ef4444" label="500 Gbps FLOOD" />
-        </>
-      )}
-
-      {isCleanDelivered && (
-        <>
-          <BoldArrow x1={430} y1={75} x2={610} y2={75} color="#10b981" label="CLEAN HTTP/2 ✓" />
-          <g transform="translate(370, 115)">
-            <rect x="-60" y="-10" width="120" height="20" rx="10" fill="#fef2f2" stroke="#ef4444" />
-            <text x="0" y="4" textAnchor="middle" fill="#991b1b" fontSize="7" fontWeight="bold" fontFamily="monospace">
-              ✕ 495 Gbps DROPPED
-            </text>
-          </g>
-        </>
-      )}
-
-      {/* Lower Scrubbing Matrix */}
+      {/* Bottom Technical Breakdown Panel */}
       <g transform="translate(30, 140)">
         <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
-        <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          DDoS MITIGATION ARCHITECTURE (BGP ANYCAST & CLOUD SCRUBBING)
+        <text x="16" y="17" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+          DDoS CLOUD MITIGATION TELEMETRY &amp; BANDWIDTH SCRUBBING METRICS
         </text>
 
+        {/* Left: Volumetric Traffic Analysis */}
         <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="325" height="98" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="10" y="16" fill="#1e40af" fontSize="8.5" fontWeight="bold">HOW CLOUD SCRUBBING WORKS:</text>
-          <text x="12" y="34" fill="#0f172a" fontSize="7.5">1. BGP Anycast routes traffic to nearest global PoP (dispersing volume).</text>
-          <text x="12" y="48" fill="#0f172a" fontSize="7.5">2. Hardware ASICs drop UDP/ICMP amplification floods at line speed.</text>
-          <text x="12" y="62" fill="#0f172a" fontSize="7.5">3. Web Application Challenge (JS/Cookie) filters out headless bot clients.</text>
-          <text x="12" y="80" fill="#059669" fontSize="7.5" fontWeight="bold">4. Only validated user traffic tunnels via GRE to customer origin.</text>
+          <rect x="0" y="0" width="325" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="10" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">ANYCAST SCRUBBING POP TRAFFIC SPLIT:</text>
 
-          <rect x="345" y="0" width="325" height="98" rx="6" fill="#f0fdf4" stroke="#86efac" />
-          <text x="355" y="16" fill="#065f46" fontSize="8.5" fontWeight="bold">KEY INTERVIEW CLARIFICATION:</text>
-          <text x="359" y="34" fill="#0f172a" fontSize="7.5">Volumetric DDoS (&gt;100 Gbps) CANNOT be mitigated by an on-premise firewall alone because the physical ISP uplink cable will saturate.</text>
-          <text x="359" y="58" fill="#0f172a" fontSize="7.5">Upstream Cloud Scrubbing (Cloudflare / AWS Shield / Akamai) is mandatory for volumetric attacks.</text>
-          <text x="359" y="80" fill="#059669" fontSize="7.5" fontWeight="bold">On-prem firewalls handle L7 application/slow-rate attacks.</text>
-        </g>
+          <g transform="translate(8, 26)">
+            {/* Ingress Bar */}
+            <rect x="0" y="0" width="309" height="26" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <rect x="0" y="0" width={isAttackPhase ? '309' : '40'} height="26" rx="4" fill={isAttackPhase ? '#fee2e2' : '#dcfce7'} />
+            <text x="10" y="17" fill="#0f172a" fontSize="7.5" fontWeight="bold">
+              INGRESS FLOOD: <tspan fill={isAttackPhase ? '#b91c1c' : '#059669'}>{isAttackPhase ? '512.4 Gbps (50k IPs)' : '15.2 Mbps (Normal)'}</tspan>
+            </text>
 
-        <g transform="translate(16, 142)">
-          <rect x="0" y="0" width="668" height="38" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="14" y="15" fill="#1e40af" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            TAKEAWAY: Multi-tiered DDoS defense combines Upstream Cloud Scrubbing for volumetric floods with On-Premises NGFWs/WAFs for Layer 7 attacks.
+            {/* Dropped Bar */}
+            <rect x="0" y="32" width="309" height="26" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <rect x="0" y="32" width={isAttackPhase ? '300' : '0'} height="26" rx="4" fill="#fecaca" />
+            <text x="10" y="49" fill="#0f172a" fontSize="7.5" fontWeight="bold">
+              ATTACK SCRUBBED: <tspan fill="#b91c1c">{isAttackPhase ? '512.38 Gbps (99.99% DROPPED ✕)' : '0 Gbps'}</tspan>
+            </text>
+
+            {/* Clean Egress */}
+            <rect x="0" y="64" width="309" height="26" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <rect x="0" y="64" width="60" height="26" rx="4" fill="#bbf7d0" />
+            <text x="10" y="81" fill="#0f172a" fontSize="7.5" fontWeight="bold">
+              CLEAN PIPE TO ORIGIN: <tspan fill="#059669">15.0 Mbps (GRE Tunnel ✓)</tspan>
+            </text>
+          </g>
+
+          <text x="10" y="132" fill="#64748b" fontSize="7.5">
+            Origin Status: <tspan fill="#059669" fontWeight="bold">100% Uptime | Zero Degradation</tspan>
           </text>
         </g>
+
+        {/* Right: Technical Inspector & Mitigation Stack */}
+        <g transform="translate(355, 36)">
+          <rect x="0" y="0" width="330" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="12" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">MULTI-LAYER CLOUD DEFENSE STACK:</text>
+
+          <g transform="translate(12, 24)">
+            <rect x="0" y="0" width="306" height="34" rx="4" fill="#0f172a" />
+            <text x="10" y="14" fill="#94a3b8" fontSize="7" fontFamily="monospace">[BGP FLOWSPEC AUTOMATED MITIGATION RULE]</text>
+            <text x="10" y="27" fill="#38bdf8" fontSize="7.5" fontFamily="monospace">
+              match udp dest-port 53,123 rate-limit 0 (Drop Amplification)
+            </text>
+          </g>
+
+          <g transform="translate(12, 64)">
+            <rect x="0" y="0" width="306" height="68" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="8" fontWeight="bold">Key Architectural Concepts:</text>
+            <text x="10" y="28" fill="#475569" fontSize="7.5">
+              • <tspan fontWeight="bold">BGP Anycast Routing:</tspan> Distributes flood across 300+ global PoPs.
+            </text>
+            <text x="10" y="42" fill="#475569" fontSize="7.5">
+              • <tspan fontWeight="bold">DPI &amp; Heuristics:</tspan> Drops malformed, UDP reflection &amp; SYN packets.
+            </text>
+            <text x="10" y="58" fill="#059669" fontSize="7.5" fontWeight="bold">
+              • <tspan fontWeight="bold">Clean-Pipe Tunnel:</tspan> Encapsulates only valid HTTP/S traffic to origin.
+            </text>
+          </g>
+        </g>
+      </g>
+
+      {/* Compact Status Indicator */}
+      <g transform="translate(40, 324)">
+        <text x="340" y="10" textAnchor="middle" fill="#64748b" fontSize="8" fontFamily="monospace">
+          {currentStepIndex >= 14
+            ? 'RESULT: ✓ ORIGIN SAFE — 500 Gbps FLOOD SCRUBBED AT PERIMETER, CLEAN TRAFFIC DELIVERED'
+            : currentStepIndex >= 8
+            ? 'CRITICAL: VOLUMETRIC ATTACK WAVE INGESTED BY ANYCAST SCRUBBING POP'
+            : currentStepIndex >= 5
+            ? 'NORMAL: LEGITIMATE USERS BROWSING ORIGIN THROUGH CLOUD ANYCAST'
+            : 'READY — ADVANCE STEP TO TRACE DDOS INGESTION, SCRUBBING & CLEAN PIPE TRANSIT'}
+        </text>
       </g>
     </svg>
   );

@@ -9,157 +9,164 @@ interface Props {
 }
 
 export const Q26FirewallLoggingVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Step 1: Client appears
-  // Step 2: Firewall appears
-  // Step 3: Server appears
-  // Step 4: Packet transmitted (Telnet Port 23)
-  // Step 5: Firewall blocks packet
-  // Step 6: Packet stops (✕ BLOCKED AT FW)
-  // Step 7: Firewall generates real-time Syslog entry
-  // Step 8: Highlight Timestamp & Source IP (10.0.1.25)
-  // Step 9: Highlight Destination IP (203.0.113.50)
-  // Step 10: Highlight Destination Port (Port 23 Telnet)
-  // Step 11: Highlight Action = DENY (Rule #402)
-  // Step 12: Visual correlation from Log -> Rule -> Threat Mitigation
+  // Step 0: Client appears (192.168.1.50)
+  // Step 1: Firewall appears
+  // Step 2: Server appears (10.0.5.100)
+  // Step 3: Cables drawn
+  // Step 4: Client generates unauthorized packet (192.168.1.50 -> 10.0.5.100:23 Telnet)
+  // Step 5: Packet moves: CLIENT -> FIREWALL
+  // Step 6: Firewall receives packet (INSPECTING)
+  // Step 7: Firewall evaluates Rulebase: Rule 405 (Block Insecure Telnet) matches
+  // Step 8: Action: DENY
+  // Step 9: Packet physically stops at Firewall (BLOCKED ✕)
+  // Step 10: Firewall Syslog Engine generates structured log record
+  // Step 11: Syslog record fields appear
+  // Step 12: Highlight Source IP: 192.168.1.50
+  // Step 13: Highlight Destination IP: 10.0.5.100
+  // Step 14: Highlight Port: :23 (Telnet)
+  // Step 15: Highlight Action: DENY / DROP
+  // Step 16: Highlight Rule Match: Rule_Block_Telnet_405
+  // Step 17: Complete Forensic Link: TRAFFIC -> BLOCK -> LOG -> RULE -> REASON ✓
 
   const showFw = currentStepIndex >= 1;
   const showServer = currentStepIndex >= 2;
+  const showCables = currentStepIndex >= 3;
 
-  const isBlocked = currentStepIndex >= 4;
-  const isLogGenerated = currentStepIndex >= 6;
-  const highlightSrc = currentStepIndex >= 7;
-  const highlightDst = currentStepIndex >= 8;
-  const highlightPort = currentStepIndex >= 9;
-  const highlightAction = currentStepIndex >= 10;
-  const isResolved = currentStepIndex >= 11;
+  const isBlocked = currentStepIndex >= 8;
+  const showLog = currentStepIndex >= 10;
 
-  let packetX = 90;
-  if (currentStepIndex === 3) packetX = 220;
-  else if (currentStepIndex >= 4) packetX = 370;
+  let packetX = 80;
+  if (currentStepIndex === 4) packetX = 80;
+  else if (currentStepIndex === 5) packetX = 230;
+  else if (currentStepIndex >= 6) packetX = 370;
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
-      {/* Baseline cable */}
-      {showServer && (
-        <line x1="90" y1="70" x2="650" y2="70" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="4 4" />
+      {/* Cables */}
+      {showCables && (
+        <line x1="80" y1="75" x2="660" y2="75" stroke="#cbd5e1" strokeWidth="2.5" strokeDasharray="4 4" />
       )}
 
-      {/* Connection arrow */}
-      {currentStepIndex === 3 && (
-        <BoldArrow x1={130} y1={70} x2={330} y2={70} color="#ef4444" label="TELNET :23" />
-      )}
-
-      {/* Red Block Barrier */}
-      {isBlocked && (
-        <g transform="translate(370, 70)">
-          <line x1="45" y1="-25" x2="45" y2="25" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
-          <rect x="55" y="-12" width="90" height="24" rx="12" fill="#fef2f2" stroke="#ef4444" strokeWidth="1.5" />
-          <text x="100" y="4" textAnchor="middle" fill="#991b1b" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            BLOCKED ✕
-          </text>
-        </g>
+      {/* Movement Arrow */}
+      {currentStepIndex === 5 && (
+        <BoldArrow x1={115} y1={75} x2={325} y2={75} color="#ef4444" label="TELNET ATTEMPT →" />
       )}
 
       {/* Nodes */}
-      <LaptopNode cx={90} cy={70} label="CLIENT" ip="10.0.1.25" active />
-      {showFw && (
-        <FirewallGatewayNode cx={370} cy={70} label="FIREWALL" sub="Syslog Stream Generator" active danger={isBlocked} />
-      )}
-      {showServer && (
-        <ServerNodeSVG cx={650} cy={70} label="TARGET SERVER" sub="203.0.113.50:23" active danger={isBlocked} />
-      )}
+      <LaptopNode cx={80} cy={75} label="CLIENT" ip="192.168.1.50" active={currentStepIndex <= 5} />
 
-      {/* Packet Card */}
-      {currentStepIndex >= 3 && (
-        <PacketCard
-          cx={packetX}
-          cy={28}
-          title="INSECURE TELNET"
-          protocol="TCP"
-          port="23"
-          src="10.0.1.25"
-          dst="SERVER"
-          status={isBlocked ? 'DENY' : 'NORMAL'}
-          scale={0.78}
+      {showFw && (
+        <FirewallGatewayNode
+          cx={370}
+          cy={75}
+          label="FIREWALL"
+          sub={isBlocked ? 'DROPPED ✕' : currentStepIndex >= 6 ? 'INSPECTING' : 'Syslog Engine'}
+          active={currentStepIndex >= 5}
+          success={false}
         />
       )}
 
-      {/* Lower Syslog Terminal & 5-Tuple Forensic Dissector */}
-      <g transform="translate(30, 130)">
-        <rect x="0" y="0" width="700" height="200" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+      {showServer && (
+        <ServerNodeSVG
+          cx={660}
+          cy={75}
+          label="TARGET SERVER"
+          sub="10.0.5.100:23"
+          active={false}
+          success={false}
+          statusText="UNREACHED (SECURE)"
+        />
+      )}
+
+      {/* Blocked Packet */}
+      {currentStepIndex >= 4 && (
+        <g className="animate-pop-in transition-all duration-500">
+          <PacketCard
+            cx={packetX}
+            cy={28}
+            title={isBlocked ? 'BLOCKED ✕' : 'TELNET SYN'}
+            protocol="TCP"
+            port="23"
+            src="192.168.1.50"
+            dst="10.0.5.100"
+            status={isBlocked ? 'DENY' : currentStepIndex >= 6 ? 'INSPECT' : 'NORMAL'}
+            scale={0.78}
+          />
+        </g>
+      )}
+
+      {/* Lower Forensic Syslog Deep-Dive Panel */}
+      <g transform="translate(30, 145)">
+        <rect x="0" y="0" width="700" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
         <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          FIREWALL LOGGING PIPELINE & 5-TUPLE FORENSIC DECODER
+          FIREWALL FORENSIC SYSLOG AUDIT & 5-TUPLE LOG ANALYSIS
         </text>
 
-        {/* Real-time Syslog Terminal Box */}
-        <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="668" height="52" rx="6" fill="#0f172a" stroke="#334155" />
-          <circle cx="14" cy="12" r="3" fill="#ef4444" />
-          <circle cx="24" cy="12" r="3" fill="#f59e0b" />
-          <circle cx="34" cy="12" r="3" fill="#10b981" />
-          <text x="50" y="15" fill="#64748b" fontSize="7.5" fontWeight="bold" fontFamily="monospace">
-            /var/log/messages (SYSLOG EVENT LOG STREAM)
-          </text>
+        {showLog ? (
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            {/* Raw Syslog Box */}
+            <rect x="0" y="0" width="668" height="34" rx="4" fill="#0f172a" />
+            <text x="12" y="21" fill="#f87171" fontSize="7.5" fontWeight="bold" fontFamily="monospace">
+              Oct 01 14:00:05 fw01 %ASA-4-106023: Deny tcp src trust:192.168.1.50/49152 dst dmz:10.0.5.100/23 by access-group "Block_Telnet_405"
+            </text>
 
-          {isLogGenerated ? (
-            <g transform="translate(14, 34)">
-              <text x="0" y="0" fill="#94a3b8" fontSize="8" fontFamily="monospace">[15:30:12]</text>
-              <text x="75" y="0" fill={highlightSrc ? '#38bdf8' : '#cbd5e1'} fontSize="8" fontWeight={highlightSrc ? 'bold' : 'normal'} fontFamily="monospace">
-                SRC=10.0.1.25:51294
+            {/* Field Breakdown Matrix */}
+            <g transform="translate(0, 44)">
+              {/* Field 1: Source IP */}
+              <rect x="0" y="0" width="125" height="38" rx="4" fill={currentStepIndex === 12 ? '#fee2e2' : '#f8fafc'} stroke={currentStepIndex === 12 ? '#ef4444' : '#e2e8f0'} strokeWidth={currentStepIndex === 12 ? 2 : 1} />
+              <text x="10" y="14" fill="#64748b" fontSize="7" fontWeight="bold" fontFamily="monospace">SOURCE IP</text>
+              <text x="10" y="28" fill="#0f172a" fontSize="8" fontWeight="bold" fontFamily="monospace">192.168.1.50 {currentStepIndex === 12 && '🔍'}</text>
+
+              {/* Field 2: Dest IP */}
+              <rect x="135" y="0" width="125" height="38" rx="4" fill={currentStepIndex === 13 ? '#fee2e2' : '#f8fafc'} stroke={currentStepIndex === 13 ? '#ef4444' : '#e2e8f0'} strokeWidth={currentStepIndex === 13 ? 2 : 1} />
+              <text x="10" y="14" fill="#64748b" fontSize="7" fontWeight="bold" fontFamily="monospace">DESTINATION IP</text>
+              <text x="10" y="28" fill="#0f172a" fontSize="8" fontWeight="bold" fontFamily="monospace">10.0.5.100 {currentStepIndex === 13 && '🔍'}</text>
+
+              {/* Field 3: Port / Protocol */}
+              <rect x="270" y="0" width="125" height="38" rx="4" fill={currentStepIndex === 14 ? '#fee2e2' : '#f8fafc'} stroke={currentStepIndex === 14 ? '#ef4444' : '#e2e8f0'} strokeWidth={currentStepIndex === 14 ? 2 : 1} />
+              <text x="10" y="14" fill="#64748b" fontSize="7" fontWeight="bold" fontFamily="monospace">PORT / PROTO</text>
+              <text x="10" y="28" fill="#0f172a" fontSize="8" fontWeight="bold" fontFamily="monospace">TCP :23 (Telnet) {currentStepIndex === 14 && '🔍'}</text>
+
+              {/* Field 4: Action */}
+              <rect x="405" y="0" width="125" height="38" rx="4" fill={currentStepIndex === 15 ? '#fee2e2' : '#f8fafc'} stroke={currentStepIndex === 15 ? '#ef4444' : '#e2e8f0'} strokeWidth={currentStepIndex === 15 ? 2 : 1} />
+              <text x="10" y="14" fill="#64748b" fontSize="7" fontWeight="bold" fontFamily="monospace">ACTION</text>
+              <text x="10" y="28" fill="#dc2626" fontSize="8" fontWeight="bold" fontFamily="monospace">DENY / DROP {currentStepIndex === 15 && '✕'}</text>
+
+              {/* Field 5: Rule Match */}
+              <rect x="540" y="0" width="128" height="38" rx="4" fill={currentStepIndex === 16 ? '#dcfce7' : '#f8fafc'} stroke={currentStepIndex === 16 ? '#16a34a' : '#e2e8f0'} strokeWidth={currentStepIndex === 16 ? 2 : 1} />
+              <text x="10" y="14" fill="#64748b" fontSize="7" fontWeight="bold" fontFamily="monospace">RULE MATCHED</text>
+              <text x="10" y="28" fill="#15803d" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Rule_Telnet_405 {currentStepIndex === 16 && '✓'}</text>
+            </g>
+
+            {/* Forensic Takeaway */}
+            <g transform="translate(0, 92)">
+              <rect x="0" y="0" width="668" height="38" rx="4" fill="#eff6ff" stroke="#93c5fd" />
+              <text x="12" y="16" fill="#1e40af" fontSize="7.5" fontWeight="bold" fontFamily="monospace">
+                FORENSIC TRAIL: TRAFFIC ATTEMPT → SECURITY POLICY BLOCK → AUDIT LOG GENERATED → SIEM INVESTIGATION
               </text>
-              <text x="220" y="0" fill={highlightDst ? '#4ade80' : '#cbd5e1'} fontSize="8" fontWeight={highlightDst ? 'bold' : 'normal'} fontFamily="monospace">
-                DST=203.0.113.50:23
-              </text>
-              <text x="375" y="0" fill={highlightPort ? '#fbbf24' : '#cbd5e1'} fontSize="8" fontWeight={highlightPort ? 'bold' : 'normal'} fontFamily="monospace">
-                PROTO=TCP PORT=23 (TELNET)
-              </text>
-              <text x="525" y="0" fill={highlightAction ? '#f87171' : '#cbd5e1'} fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-                ACTION=DENY RULE_ID=402
+              <text x="12" y="28" fill="#0f172a" fontSize="7">
+                Firewall logs prove non-compliance, isolate unauthorized endpoints, and provide legal audit evidence.
               </text>
             </g>
-          ) : (
-            <text x="14" y="34" fill="#64748b" fontSize="8" fontFamily="monospace">Waiting for firewall drop event...</text>
-          )}
-        </g>
-
-        {/* 5-Step Forensic Process Strip */}
-        <g transform="translate(16, 100)">
-          {[
-            { num: '1', title: 'TRAFFIC', sub: 'Insecure Telnet', active: true },
-            { num: '2', title: 'DROP', sub: 'Firewall Intercept', active: isBlocked },
-            { num: '3', title: 'SYSLOG', sub: '5-Tuple Generated', active: isLogGenerated },
-            { num: '4', title: 'RULE #402', sub: 'Explicit Telnet Deny', active: highlightAction },
-            { num: '5', title: 'RESOLVED', sub: 'Use SSH on Port 22', active: isResolved },
-          ].map((s, idx) => (
-            <g key={s.num} transform={`translate(${idx * 135}, 0)`}>
-              <rect
-                x="0"
-                y="0"
-                width="128"
-                height="54"
-                rx="6"
-                fill={s.active ? (idx === 4 ? '#ecfdf5' : '#eff6ff') : '#f8fafc'}
-                stroke={s.active ? (idx === 4 ? '#10b981' : '#3b82f6') : '#cbd5e1'}
-                strokeWidth={s.active ? 1.5 : 1}
-              />
-              <rect x="0" y="0" width="128" height="15" rx="5" fill={s.active ? (idx === 4 ? '#10b981' : '#3b82f6') : '#cbd5e1'} />
-              <text x="64" y="11" textAnchor="middle" fill="#ffffff" fontSize="7" fontWeight="bold">
-                STEP {s.num}: {s.title}
-              </text>
-              <text x="64" y="32" textAnchor="middle" fill="#0f172a" fontSize="7.5" fontWeight="bold">
-                {s.sub}
-              </text>
-            </g>
-          ))}
-        </g>
-
-        {/* Diagnostic Takeaway */}
-        <g transform="translate(16, 166)">
-          <text x="0" y="18" fill="#334155" fontSize="8" fontWeight="bold" fontFamily="monospace">
-            FORENSIC LIFECYCLE: TRAFFIC ➔ BLOCK ➔ LOG (5-TUPLE) ➔ INVESTIGATE ➔ RULE MATCH ➔ SECURE REMEDIATION.
-          </text>
-        </g>
+          </g>
+        ) : (
+          <g transform="translate(16, 40)">
+            <rect x="0" y="0" width="668" height="120" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+            <text x="14" y="24" fill="#64748b" fontSize="9" fontWeight="bold" fontFamily="monospace">
+              Awaiting Traffic Transmission & Security Policy Drop...
+            </text>
+            <text x="14" y="48" fill="#0f172a" fontSize="8">
+              1. Client sends cleartext Telnet connection attempt on restricted Port 23.
+            </text>
+            <text x="14" y="68" fill="#0f172a" fontSize="8">
+              2. Firewall evaluates policy and halts packet at ingress interface.
+            </text>
+            <text x="14" y="88" fill="#0f172a" fontSize="8">
+              3. Structured CEF / Syslog engine generates real-time telemetry event.
+            </text>
+          </g>
+        )}
       </g>
     </svg>
   );

@@ -9,152 +9,223 @@ interface Props {
 }
 
 export const Q29DenyByDefaultVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Scenario 1: Authorized Whitelisted Packet (Steps 0-7)
-  // Step 1: Client appears
-  // Step 2: Firewall appears with explicit Whitelist Rules (ALLOW HTTPS :443, ALLOW DNS :53)
-  // Step 3: Server appears
-  // Step 4: Rules loaded
-  // Step 5: Client creates HTTPS packet (Port 443)
-  // Step 6: Packet moves to firewall
-  // Step 7: Rule 1 matches -> ALLOWED ✓
-  // Step 8: Packet reaches Server (Delivered ✓) - STOP
+  // SCENARIO A: APPROVED WHITELIST TRAFFIC (Steps 0-9)
+  // Step 0: Client appears (10.0.1.25)
+  // Step 1: Firewall appears with Whitelist Rules
+  // Step 2: Server appears (10.0.5.50)
+  // Step 3: Cables drawn
+  // Step 4: Client creates HTTPS packet (10.0.1.25 -> 10.0.5.50:443)
+  // Step 5: Packet moves: CLIENT -> FIREWALL
+  // Step 6: Firewall inspects whitelist: Rule 1 (ALLOW HTTPS) matches ✓
+  // Step 7: Action: ALLOW
+  // Step 8: Packet moves: FIREWALL -> SERVER
+  // Step 9: Server receives packet (ACCEPTED ✓) - STOP
   //
-  // Scenario 2: Unauthorized Unmatched Packet (Steps 8-12)
-  // Step 9: Client creates unauthorized SSH packet (Port 22)
-  // Step 10: SSH packet moves to firewall
-  // Step 11: Firewall checks rules: No rule matches
-  // Step 12: DEFAULT IMPLICIT DENY POLICY ACTIVATES -> Action: DROP
-  // Step 13: Packet stops at firewall (✕ BLOCKED AT FW). Server safe!
+  // SCENARIO B: UNAPPROVED UNMATCHED TRAFFIC (Steps 10-17)
+  // Step 10: Client creates SSH packet (10.0.1.25 -> 10.0.5.50:22)
+  // Step 11: Packet moves: CLIENT -> FIREWALL
+  // Step 12: Firewall checks Rule 1 (HTTPS: No Match ✕)
+  // Step 13: Firewall checks Rule 2 (DNS: No Match ✕)
+  // Step 14: Packet falls through to bottom of rule list
+  // Step 15: IMPLICIT DEFAULT DENY triggers: Action = DENY / DROP
+  // Step 16: Packet physically stops at Firewall (BLOCKED ✕)
+  // Step 17: Server receives 0 packets (DENY-BY-DEFAULT PROTECTION VERIFIED ✓)
 
-  const isUnauthorizedPhase = currentStepIndex >= 8;
+  const isScenarioB = currentStepIndex >= 10;
 
   const showFw = currentStepIndex >= 1;
   const showServer = currentStepIndex >= 2;
+  const showCables = currentStepIndex >= 3;
 
-  const isAllowedDelivered = currentStepIndex === 7;
-  const isDeniedDrop = currentStepIndex >= 11;
+  const isDeliveredScenarioA = currentStepIndex >= 8 && currentStepIndex <= 9;
+  const isBlockedScenarioB = currentStepIndex >= 15;
 
-  let packetX = 90;
-  if (!isUnauthorizedPhase) {
-    if (currentStepIndex === 4) packetX = 90;
-    else if (currentStepIndex === 5) packetX = 220;
-    else if (currentStepIndex === 6) packetX = 370;
-    else if (currentStepIndex >= 7) packetX = 650;
+  let packetX = 80;
+  if (!isScenarioB) {
+    if (currentStepIndex <= 4) packetX = 80;
+    else if (currentStepIndex === 5) packetX = 230;
+    else if (currentStepIndex >= 6 && currentStepIndex <= 7) packetX = 370;
+    else if (currentStepIndex === 8) packetX = 510;
+    else if (currentStepIndex >= 9) packetX = 660;
   } else {
-    if (currentStepIndex === 8) packetX = 90;
-    else if (currentStepIndex === 9) packetX = 220;
-    else if (currentStepIndex >= 10) packetX = 370;
+    if (currentStepIndex === 10) packetX = 80;
+    else if (currentStepIndex === 11) packetX = 230;
+    else if (currentStepIndex >= 12) packetX = 370;
   }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
-      {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isUnauthorizedPhase ? '#fef2f2' : '#f0fdf4'} stroke={isUnauthorizedPhase ? '#fca5a5' : '#86efac'} />
-        <text x="340" y="16" textAnchor="middle" fill={isUnauthorizedPhase ? '#991b1b' : '#047857'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isUnauthorizedPhase
-            ? 'SCENARIO B: UNMATCHED PORT 22 (SSH) ➔ HITS DEFAULT IMPLICIT DENY POLICY ➔ DROPPED ✕'
-            : 'SCENARIO A: EXPLICITLY WHITELISTED PORT 443 (HTTPS) ➔ MATCHES RULE #1 ➔ PERMITTED ✓'}
-        </text>
-      </g>
+      {/* Cables */}
+      {showCables && (
+        <line x1="80" y1="75" x2="660" y2="75" stroke="#cbd5e1" strokeWidth="2.5" strokeDasharray="4 4" />
+      )}
 
-      {/* Baseline cable */}
-      {showServer && (
-        <line x1="90" y1="70" x2="650" y2="70" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="4 4" />
+      {/* Movement Arrows */}
+      {!isScenarioB && currentStepIndex === 5 && (
+        <BoldArrow x1={115} y1={75} x2={325} y2={75} color="#2563eb" label="HTTPS SYN →" />
+      )}
+      {!isScenarioB && currentStepIndex === 8 && (
+        <BoldArrow x1={415} y1={75} x2={615} y2={75} color="#10b981" label="PERMITTED TO SERVER →" />
+      )}
+      {isScenarioB && currentStepIndex === 11 && (
+        <BoldArrow x1={115} y1={75} x2={325} y2={75} color="#ef4444" label="SSH ATTEMPT →" />
       )}
 
       {/* Nodes */}
-      <LaptopNode cx={90} cy={70} label={isUnauthorizedPhase ? 'PROBE CLIENT' : 'AUTHORIZED CLIENT'} ip="10.0.1.25" active danger={isUnauthorizedPhase} />
+      <LaptopNode
+        cx={80}
+        cy={75}
+        label="CLIENT"
+        ip="10.0.1.25"
+        active={!isScenarioB ? currentStepIndex <= 5 : currentStepIndex <= 11}
+      />
 
       {showFw && (
-        <FirewallGatewayNode cx={370} cy={70} label="FIREWALL" sub="Deny-by-Default Policy" active success={isAllowedDelivered} danger={isDeniedDrop} />
-      )}
-
-      {showServer && (
-        <ServerNodeSVG cx={650} cy={70} label="SERVER" sub="203.0.113.50" active success={isAllowedDelivered} danger={isDeniedDrop} />
-      )}
-
-      {/* Motion Arrows */}
-      {!isUnauthorizedPhase ? (
-        <>
-          {currentStepIndex === 5 && (
-            <BoldArrow x1={130} y1={70} x2={330} y2={70} color="#2563eb" label="HTTPS :443" />
-          )}
-          {currentStepIndex >= 7 && (
-            <BoldArrow x1={410} y1={70} x2={615} y2={70} color="#10b981" label="WHITELISTED ✓" />
-          )}
-        </>
-      ) : (
-        <>
-          {currentStepIndex === 9 && (
-            <BoldArrow x1={130} y1={70} x2={330} y2={70} color="#ef4444" label="SSH :22" />
-          )}
-          {isDeniedDrop && (
-            <g transform="translate(370, 70)">
-              <line x1="45" y1="-25" x2="45" y2="25" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
-              <rect x="55" y="-12" width="105" height="24" rx="12" fill="#fef2f2" stroke="#ef4444" strokeWidth="1.5" />
-              <text x="107" y="4" textAnchor="middle" fill="#991b1b" fontSize="8" fontWeight="bold" fontFamily="monospace">
-                DEFAULT DENY ✕
-              </text>
-            </g>
-          )}
-        </>
-      )}
-
-      {/* Packet Card */}
-      {((!isUnauthorizedPhase && currentStepIndex >= 4) || (isUnauthorizedPhase && currentStepIndex >= 8)) && (
-        <PacketCard
-          cx={packetX}
-          cy={28}
-          title={isUnauthorizedPhase ? 'PORT 22 PROBE' : 'HTTPS REQUEST'}
-          protocol="TCP"
-          port={isUnauthorizedPhase ? '22' : '443'}
-          src="10.0.1.25"
-          dst="203.0.113.50"
-          status={isDeniedDrop ? 'DENY' : isAllowedDelivered ? 'ALLOW' : 'NORMAL'}
-          scale={0.78}
+        <FirewallGatewayNode
+          cx={370}
+          cy={75}
+          label="FIREWALL"
+          sub={isBlockedScenarioB ? 'IMPLICIT DENY ✕' : isScenarioB ? 'EVALUATING' : 'WHITELIST'}
+          active={
+            (!isScenarioB && currentStepIndex >= 6 && currentStepIndex <= 7) ||
+            (isScenarioB && currentStepIndex >= 12)
+          }
+          success={isDeliveredScenarioA}
         />
       )}
 
-      {/* Lower Whitelist & Default Deny Matrix */}
-      <g transform="translate(30, 140)">
-        <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+      {showServer && (
+        <ServerNodeSVG
+          cx={660}
+          cy={75}
+          label="SERVER"
+          sub="10.0.5.50"
+          active={isDeliveredScenarioA}
+          success={isDeliveredScenarioA}
+          statusText={
+            isDeliveredScenarioA
+              ? 'ACCEPTED ✓'
+              : isBlockedScenarioB
+              ? 'PROTECTED (0 PKTS)'
+              : 'STANDBY'
+          }
+        />
+      )}
+
+      {/* Packet Card */}
+      {((!isScenarioB && currentStepIndex >= 4) || (isScenarioB && currentStepIndex >= 10)) && (
+        <g className="animate-pop-in transition-all duration-500">
+          <PacketCard
+            cx={packetX}
+            cy={28}
+            title={
+              !isScenarioB
+                ? currentStepIndex >= 7
+                  ? 'ALLOW ✓'
+                  : 'HTTPS SYN'
+                : isBlockedScenarioB
+                ? 'BLOCKED ✕'
+                : 'SSH SYN'
+            }
+            protocol="TCP"
+            port={isScenarioB ? '22' : '443'}
+            src="10.0.1.25"
+            dst="10.0.5.50"
+            status={
+              !isScenarioB
+                ? currentStepIndex >= 7
+                  ? 'ALLOW'
+                  : 'NORMAL'
+                : isBlockedScenarioB
+                ? 'DENY'
+                : 'INSPECT'
+            }
+            scale={0.78}
+          />
+        </g>
+      )}
+
+      {/* Lower Technical Deep-Dive Panel */}
+      <g transform="translate(30, 145)">
+        <rect x="0" y="0" width="700" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
         <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          DENY-BY-DEFAULT (ZERO TRUST) SECURITY MODEL
+          {isScenarioB
+            ? 'SCENARIO B: UNMATCHED TRAFFIC TRIGGERING IMPLICIT DEFAULT DENY'
+            : 'SCENARIO A: APPROVED TRAFFIC MATCHING EXPLICIT WHITELIST RULES'}
         </text>
 
-        <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="325" height="98" rx="6" fill="#f0fdf4" stroke="#86efac" />
-          <text x="10" y="16" fill="#065f46" fontSize="8.5" fontWeight="bold">EXPLICIT WHITELIST RULES (Authorized Only):</text>
-          
-          <text x="12" y="34" fill="#065f46" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Rule 1: ALLOW TCP ANY ➔ Server:443 (HTTPS)</text>
-          <text x="12" y="48" fill="#065f46" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Rule 2: ALLOW UDP ANY ➔ Server:53 (DNS)</text>
-          <text x="12" y="66" fill="#64748b" fontSize="7">Principle: Only explicitly necessary business ports are opened.</text>
-          <text x="12" y="80" fill="#64748b" fontSize="7">All other 65,533 ports remain completely closed.</text>
+        {!isScenarioB ? (
+          /* Whitelist Allow View */
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#f8fafc" stroke="#cbd5e1" />
+            <text x="12" y="18" fill="#15803d" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              EXPLICIT WHITELIST POLICY:
+            </text>
 
-          <rect x="345" y="0" width="325" height="98" rx="6" fill="#fef2f2" stroke="#fca5a5" />
-          <text x="355" y="16" fill="#991b1b" fontSize="8.5" fontWeight="bold">DEFAULT IMPLICIT POLICY (Catch-All Drop):</text>
+            <g transform="translate(10, 24)">
+              <rect
+                x="0"
+                y="0"
+                width="648"
+                height="32"
+                rx="4"
+                fill={currentStepIndex >= 6 ? '#dcfce7' : '#ffffff'}
+                stroke={currentStepIndex >= 6 ? '#16a34a' : '#cbd5e1'}
+                strokeWidth={1.5}
+              />
+              <text x="10" y="20" fill={currentStepIndex >= 6 ? '#15803d' : '#0f172a'} fontSize="8" fontWeight="bold" fontFamily="monospace">
+                Rule 1: ALLOW SRC=10.0.1.0/24 DST=10.0.5.50:443 PROTO=TCP {currentStepIndex >= 6 && '→ MATCH: PERMIT ✓'}
+              </text>
+            </g>
 
-          <rect x="353" y="24" width="309" height="32" rx="4" fill="#fee2e2" stroke="#fca5a5" />
-          <text x="359" y="38" fill="#991b1b" fontSize="7.5" fontWeight="bold" fontFamily="monospace">
-            DEFAULT: DENY IP ANY ANY (Implicit Drop)
-          </text>
-          <text x="359" y="50" fill="#dc2626" fontSize="7">Silently discards any traffic that failed earlier rules.</text>
+            <g transform="translate(10, 62)">
+              <rect x="0" y="0" width="648" height="26" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+              <text x="10" y="17" fill="#64748b" fontSize="7.5" fontFamily="monospace">
+                Rule 2: ALLOW SRC=10.0.1.0/24 DST=8.8.8.8:53 PROTO=UDP (DNS)
+              </text>
+            </g>
 
-          <text x="359" y="74" fill="#64748b" fontSize="7" fontFamily="monospace">Result: Port scans (21, 22, 23, 3389) are dropped instantly.</text>
-          <text x="359" y="88" fill="#047857" fontSize="7" fontWeight="bold">Attack surface reduced by 99.9%.</text>
-        </g>
+            <text x="12" y="115" fill="#15803d" fontSize="7.5" fontWeight="bold">
+              WHITELIST PRINCIPLE: Only explicitly listed services are allowed through the firewall.
+            </text>
+          </g>
+        ) : (
+          /* Implicit Deny View */
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#fef2f2" stroke="#f87171" />
+            <text x="12" y="18" fill="#991b1b" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              EVALUATION OF UNKNOWN SSH PACKET (PORT 22):
+            </text>
 
-        <g transform="translate(16, 142)">
-          <rect x="0" y="0" width="668" height="38" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="14" y="15" fill="#1e40af" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            SECURITY AXIOM: That which is not explicitly permitted is forbidden.
-          </text>
-          <text x="14" y="28" fill="#64748b" fontSize="7.5">
-            Never use an Allow-by-Default model (Blacklisting); always implement Deny-by-Default (Whitelisting).
-          </text>
-        </g>
+            <text x="14" y="36" fill={currentStepIndex >= 12 ? '#dc2626' : '#64748b'} fontSize="7.5" fontFamily="monospace">
+              1. Check Rule 1 (Port 443 HTTPS) → NO MATCH ✕ (Port 22 != 443)
+            </text>
+            <text x="14" y="52" fill={currentStepIndex >= 13 ? '#dc2626' : '#64748b'} fontSize="7.5" fontFamily="monospace">
+              2. Check Rule 2 (Port 53 DNS) → NO MATCH ✕ (Port 22 != 53)
+            </text>
+
+            <g transform="translate(10, 62)">
+              <rect
+                x="0"
+                y="0"
+                width="648"
+                height="32"
+                rx="4"
+                fill={currentStepIndex >= 15 ? '#fee2e2' : '#ffffff'}
+                stroke={currentStepIndex >= 15 ? '#ef4444' : '#cbd5e1'}
+                strokeWidth={1.5}
+              />
+              <text x="10" y="20" fill={currentStepIndex >= 15 ? '#dc2626' : '#64748b'} fontSize="8" fontWeight="bold" fontFamily="monospace">
+                [IMPLICIT DENY ALL]: DENY SRC=ANY DST=ANY PROTO=ANY {currentStepIndex >= 15 && '→ TRIGGERED: DROP ✕'}
+              </text>
+            </g>
+
+            <text x="12" y="116" fill="#991b1b" fontSize="7.5" fontWeight="bold">
+              GOLDEN RULE: "Everything not explicitly permitted is strictly forbidden."
+            </text>
+          </g>
+        )}
       </g>
     </svg>
   );

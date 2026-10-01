@@ -9,105 +9,195 @@ interface Props {
 }
 
 export const Q34DnsSpoofingVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Step 1: Client appears
-  // Step 2: DNS Resolver appears
-  // Step 3: Legitimate Bank Server appears (bank.com -> 104.22.15.1)
-  // Step 4: Client sends DNS query for "bank.com"
-  // Step 5: Malicious Attacker appears and races ahead of authoritative server
-  // Step 6: Attacker injects forged DNS response with fake IP (6.6.6.6 - Phishing Site)
-  // Step 7: DNS Cache poisoned with fake IP!
-  // Step 8: Client sends HTTPS request & credentials to Fake Phishing Server (Compromised!)
-  // Step 9: Side-by-side comparison: Legitimate Resolution vs Spoofed Cache Manipulation
-  // Step 10: Mitigation Demonstration: DNSSEC digital signatures reject forged responses
+  // SCENARIO 1: DNS CACHE POISONING ATTACK (Steps 0-8)
+  // Step 0: Client appears (10.0.1.50)
+  // Step 1: Recursive DNS Resolver appears
+  // Step 2: Legitimate Server appears (bank.com -> 198.51.100.50)
+  // Step 3: Cables drawn
+  // Step 4: Client sends DNS Query for bank.com
+  // Step 5: Attacker races forged DNS response with guessed TXID (bank.com = 203.0.113.99 Phishing IP)
+  // Step 6: Resolver cache POISONED with forged mapping (bank.com -> 203.0.113.99)
+  // Step 7: Spoofed answer delivered to Client
+  // Step 8: Client connects to Attacker Phishing Server (COMPROMISED ✕) - STOP
+  //
+  // SCENARIO 2: DNSSEC CRYPTOGRAPHIC VALIDATION (Steps 9-16)
+  // Step 9: DNSSEC enabled on DNS Resolver & Domain
+  // Step 10: Client resends DNS query for bank.com
+  // Step 11: Attacker injects forged response again
+  // Step 12: Resolver validates cryptographic RRSIG signature against Root Trust Anchor
+  // Step 13: Forged reply lacks valid cryptographic signature -> REJECTED ✕
+  // Step 14: Authentic DNSSEC-validated record (198.51.100.50) accepted
+  // Step 15: Validated response delivered to Client
+  // Step 16: Client securely connects to legitimate banking portal ✓
+
+  const isDnssecPhase = currentStepIndex >= 9;
 
   const showResolver = currentStepIndex >= 1;
-  const showBank = currentStepIndex >= 2;
-  const showAttacker = currentStepIndex >= 4;
+  const showServer = currentStepIndex >= 2;
+  const showCables = currentStepIndex >= 3;
 
-  const isDnsQuery = currentStepIndex === 3;
-  const isSpoofing = currentStepIndex === 5 || currentStepIndex === 6;
-  const isPhishingVictim = currentStepIndex === 7;
-  const isDnssecMitigated = currentStepIndex >= 9;
+  const isPoisonedPhase1 = currentStepIndex >= 6 && currentStepIndex <= 8;
+  const isDnssecSuccess = currentStepIndex >= 14;
+
+  let packetX = 80;
+  if (!isDnssecPhase) {
+    if (currentStepIndex === 4) packetX = 80;
+    else if (currentStepIndex === 5) packetX = 230;
+    else if (currentStepIndex >= 6 && currentStepIndex <= 7) packetX = 370;
+    else if (currentStepIndex >= 8) packetX = 660;
+  } else {
+    if (currentStepIndex === 10) packetX = 80;
+    else if (currentStepIndex >= 11 && currentStepIndex <= 13) packetX = 370;
+    else if (currentStepIndex >= 14 && currentStepIndex <= 15) packetX = 230;
+    else if (currentStepIndex >= 16) packetX = 660;
+  }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
-      {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isDnssecMitigated ? '#f0fdf4' : '#fef2f2'} stroke={isDnssecMitigated ? '#86efac' : '#fca5a5'} />
-        <text x="340" y="16" textAnchor="middle" fill={isDnssecMitigated ? '#047857' : '#991b1b'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isDnssecMitigated
-            ? 'DNSSEC DEFENSE: CRYPTOGRAPHIC RRSIG SIGNATURE VALIDATION REJECTS FORGED DNS RESPONSES ✓'
-            : 'DNS CACHE POISONING: ATTACKER INJECTS FAKE IP (6.6.6.6) ➔ USER DIVERTED TO PHISHING BANK SITE ✕'}
-        </text>
-      </g>
+      {/* Cables */}
+      {showCables && (
+        <line x1="80" y1="75" x2="660" y2="75" stroke="#cbd5e1" strokeWidth="2.5" strokeDasharray="4 4" />
+      )}
+
+      {/* Movement Arrows */}
+      {!isDnssecPhase && currentStepIndex === 5 && (
+        <BoldArrow x1={325} y1={120} x2={370} y2={95} color="#ef4444" label="FORGED DNS REPLY (GUESSED TXID) →" />
+      )}
+      {!isDnssecPhase && currentStepIndex === 7 && (
+        <BoldArrow x1={325} y1={75} x2={115} y2={75} color="#ef4444" label="← SPOOFED IP TO CLIENT" />
+      )}
+      {!isDnssecPhase && currentStepIndex === 8 && (
+        <BoldArrow x1={115} y1={75} x2={615} y2={75} color="#ef4444" label="TO PHISHING SERVER →" />
+      )}
+
+      {isDnssecPhase && currentStepIndex === 15 && (
+        <BoldArrow x1={325} y1={75} x2={115} y2={75} color="#10b981" label="← VALIDATED DNSSEC ANSWER" />
+      )}
+      {isDnssecPhase && currentStepIndex === 16 && (
+        <BoldArrow x1={115} y1={75} x2={615} y2={75} color="#10b981" label="TO LEGITIMATE BANK →" />
+      )}
 
       {/* Nodes */}
-      <LaptopNode cx={80} cy={75} label="CLIENT BROWSER" ip="192.168.1.10" active />
+      <LaptopNode
+        cx={80}
+        cy={75}
+        label="CLIENT"
+        ip="10.0.1.50"
+        active={!isDnssecPhase ? currentStepIndex <= 5 || currentStepIndex === 8 : currentStepIndex <= 10 || isDnssecSuccess}
+      />
 
+      {/* DNS Resolver */}
       {showResolver && (
-        <ServerNodeSVG cx={370} cy={75} label="DNS RESOLVER" sub="Cache Poison Target" active danger={isSpoofing} success={isDnssecMitigated} />
-      )}
-
-      {showBank && (
-        <ServerNodeSVG cx={650} cy={75} label="LEGITIMATE BANK" sub="104.22.15.1" active success={!isPhishingVictim} />
-      )}
-
-      {showAttacker && (
-        <g transform="translate(370, 0)">
-          <LaptopNode cx={0} cy={0} label="DNS SPOOFER" ip="6.6.6.6" active danger={!isDnssecMitigated} />
-        </g>
-      )}
-
-      {/* Arrows */}
-      {isDnsQuery && (
-        <BoldArrow x1={120} y1={75} x2={330} y2={75} color="#0284c7" label="QUERY: bank.com" />
-      )}
-      {isSpoofing && (
-        <BoldArrow x1={370} y1={25} x2={370} y2={50} color="#ef4444" label="FORGED IP: 6.6.6.6" />
-      )}
-      {isPhishingVictim && (
-        <BoldArrow x1={120} y1={75} x2={370} y2={25} color="#ef4444" label="LOGIN SENT TO FAKE BANK ✕" />
-      )}
-
-      {isDnssecMitigated && (
-        <g transform="translate(370, 75)">
-          <rect x="-65" y="-12" width="130" height="24" rx="12" fill="#ecfdf5" stroke="#10b981" strokeWidth={2} />
-          <text x="0" y="4" textAnchor="middle" fill="#065f46" fontSize="8" fontWeight="bold" fontFamily="monospace">
-            ✓ DNSSEC SIGNATURE VALID
+        <g>
+          <rect x="330" y="55" width="80" height="40" rx="6" fill="#0f172a" stroke={isPoisonedPhase1 ? '#ef4444' : isDnssecPhase ? '#22c55e' : '#06b6d4'} strokeWidth="2" />
+          <text x="370" y="74" textAnchor="middle" fill={isPoisonedPhase1 ? '#fca5a5' : '#67e8f9'} fontSize="8" fontWeight="bold" fontFamily="monospace">
+            DNS RESOLVER
+          </text>
+          <text x="370" y="86" textAnchor="middle" fill="#94a3b8" fontSize="6.5" fontFamily="monospace">
+            {isPoisonedPhase1 ? 'CACHE POISONED' : isDnssecPhase ? 'DNSSEC VALIDATING' : 'Recursive Cache'}
           </text>
         </g>
       )}
 
-      {/* Lower DNSSEC Comparison Box */}
-      <g transform="translate(30, 140)">
-        <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+      {/* Server Node */}
+      {showServer && (
+        <ServerNodeSVG
+          cx={660}
+          cy={75}
+          label={isPoisonedPhase1 ? 'PHISHING PORTAL' : 'LEGITIMATE BANK'}
+          sub={isPoisonedPhase1 ? '203.0.113.99 (Attacker)' : '198.51.100.50 (Official)'}
+          active={currentStepIndex === 8 || currentStepIndex >= 16}
+          success={isDnssecSuccess}
+          statusText={
+            isPoisonedPhase1
+              ? 'TRICKED ✕'
+              : isDnssecSuccess
+              ? 'AUTHENTIC ✓'
+              : 'bank.com'
+          }
+        />
+      )}
+
+      {/* Packet Card */}
+      {((!isDnssecPhase && currentStepIndex >= 4) || (isDnssecPhase && currentStepIndex >= 10)) && (
+        <g className="animate-pop-in transition-all duration-500">
+          <PacketCard
+            cx={packetX}
+            cy={28}
+            title={
+              !isDnssecPhase
+                ? isPoisonedPhase1
+                  ? 'POISONED'
+                  : 'DNS QUERY'
+                : isDnssecSuccess
+                ? 'DNSSEC OK ✓'
+                : 'DNSSEC QUERY'
+            }
+            protocol="DNS"
+            port="53"
+            src={!isDnssecPhase && isPoisonedPhase1 ? 'Attacker (Forged)' : '10.0.1.50'}
+            dst={
+              !isDnssecPhase
+                ? isPoisonedPhase1
+                  ? 'bank.com = 203.0.113.99'
+                  : 'bank.com'
+                : 'bank.com (RRSIG)'
+            }
+            status={!isDnssecPhase && isPoisonedPhase1 ? 'DENY' : isDnssecSuccess ? 'ALLOW' : 'INSPECT'}
+            scale={0.78}
+          />
+        </g>
+      )}
+
+      {/* Lower Technical Deep-Dive Panel */}
+      <g transform="translate(30, 145)">
+        <rect x="0" y="0" width="700" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
         <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          DNS CACHE POISONING ANATOMY & DNSSEC VALIDATION MECHANISM
+          {isDnssecPhase
+            ? 'MITIGATION: DNSSEC CRYPTOGRAPHIC RRSIG SIGNATURE VALIDATION'
+            : 'DNS CACHE POISONING ATTACK (KAMINSKY FORGED TXID RACE CONDITION)'}
         </text>
 
-        <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="325" height="98" rx="6" fill="#fef2f2" stroke="#fca5a5" />
-          <text x="10" y="16" fill="#991b1b" fontSize="8.5" fontWeight="bold">HOW DNS CACHE POISONING WORKS (Kaminsky Attack):</text>
-          <text x="12" y="34" fill="#0f172a" fontSize="7.5">1. Attacker floods resolver with guesses of 16-bit Transaction ID.</text>
-          <text x="12" y="48" fill="#0f172a" fontSize="7.5">2. Forged reply arrives before the real authoritative server responds.</text>
-          <text x="12" y="62" fill="#0f172a" fontSize="7.5">3. Resolver stores fake record (TTL: 86400s) and serves it to all users.</text>
-          <text x="12" y="80" fill="#dc2626" fontSize="7" fontWeight="bold">Result: Massive stealth credential theft without browser SSL warnings.</text>
-
-          <rect x="345" y="0" width="325" height="98" rx="6" fill="#f0fdf4" stroke="#86efac" />
-          <text x="355" y="16" fill="#065f46" fontSize="8.5" fontWeight="bold">HOW DNSSEC PREVENTS SPOOFING:</text>
-          <text x="359" y="34" fill="#0f172a" fontSize="7.5">1. Cryptographic Signatures (RRSIG): Zone signed with private key.</text>
-          <text x="359" y="48" fill="#0f172a" fontSize="7.5">2. Chain of Trust (DS records): Validated up to Root DNS Zone (.).</text>
-          <text x="359" y="62" fill="#0f172a" fontSize="7.5">3. If forged response lacks valid cryptographic signature, resolver drops it.</text>
-          <text x="359" y="80" fill="#059669" fontSize="7.5" fontWeight="bold">4. Source port randomization + 0x20 encoding as secondary defenses.</text>
-        </g>
-
-        <g transform="translate(16, 142)">
-          <rect x="0" y="0" width="668" height="38" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="14" y="15" fill="#1e40af" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            TAKEAWAY: DNS Spoofing redirects legitimate users to fake IP addresses. DNSSEC provides cryptographic proof of origin and data integrity.
-          </text>
-        </g>
+        {!isDnssecPhase ? (
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#fef2f2" stroke="#f87171" />
+            <text x="12" y="18" fill="#991b1b" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              POISONED DNS RESOLVER CACHE (bank.com → 203.0.113.99):
+            </text>
+            <text x="14" y="38" fill="#0f172a" fontSize="7.5">
+              1. Attacker floods resolver with thousands of forged responses guessing the 16-bit Transaction ID (TXID).
+            </text>
+            <text x="14" y="56" fill="#0f172a" fontSize="7.5">
+              2. Forged reply arrives before authoritative server; resolver stores attacker's phishing IP in cache.
+            </text>
+            <text x="14" y="74" fill="#dc2626" fontSize="8" fontWeight="bold" fontFamily="monospace">
+              3. RESULT: Client browser queries bank.com and is silently redirected to attacker phishing site ✕.
+            </text>
+            <text x="14" y="98" fill="#991b1b" fontSize="7.5" fontWeight="bold">
+              Standard DNS has zero authentication; resolvers accept any matching TXID blindly.
+            </text>
+          </g>
+        ) : (
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#f0fdf4" stroke="#86efac" />
+            <text x="12" y="18" fill="#15803d" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              HOW DNSSEC PREVENTS CACHE POISONING:
+            </text>
+            <text x="14" y="38" fill="#0f172a" fontSize="7.5">
+              1. Authoritative zone signs resource records using asymmetric cryptographic private keys (RRSIG).
+            </text>
+            <text x="14" y="56" fill="#0f172a" fontSize="7.5">
+              2. Resolver validates digital signature using public keys chained to Root DNS Zone Key Signing Key (KSK).
+            </text>
+            <text x="14" y="74" fill="#15803d" fontSize="8" fontWeight="bold" fontFamily="monospace">
+              3. ACTION: Forged unsigned response is INSTANTLY DISCARDED. Only verified IP (198.51.100.50) is served ✓.
+            </text>
+            <text x="14" y="98" fill="#15803d" fontSize="7.5" fontWeight="bold">
+              DNSSEC guarantees data integrity and origin authenticity across the global Internet.
+            </text>
+          </g>
+        )}
       </g>
     </svg>
   );

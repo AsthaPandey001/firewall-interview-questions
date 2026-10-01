@@ -1,6 +1,6 @@
 import React from 'react';
 import type { AnimationStep } from '../../types';
-import { BoldArrow, LaptopNode, FirewallGatewayNode, ServerNodeSVG, PacketCard } from './VisualPrimitives';
+import { BoldArrow, LaptopNode, ServerNodeSVG, PacketCard } from './VisualPrimitives';
 
 interface Props {
   currentStepIndex: number;
@@ -9,174 +9,266 @@ interface Props {
 }
 
 export const Q46NacAccessVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Scenario 1: Compliant Device (Steps 0-4)
-  // Step 1: Corporate Endpoint connects to 802.1X Edge Switch
-  // Step 2: NAC / RADIUS Policy Server (Cisco ISE / Aruba ClearPass) appears
-  // Step 3: Corporate Production VLAN & Quarantine VLAN appear
-  // Step 4: Endpoint sends 802.1X EAP identity -> NAC inspects posture (AV Active, Patch OK)
-  // Step 5: Posture Compliant -> Dynamic VLAN Assignment (VLAN 10 Production) -> GRANTED ✓
-  //
-  // Scenario 2: Non-compliant / BYOD Device (Steps 5-9)
-  // Step 6: Non-compliant device connects (Missing AV / Jailbroken)
-  // Step 7: NAC evaluates posture check
-  // Step 8: Posture failure detected (Antivirus signature outdated > 30 days)
-  // Step 9: NAC issues Quarantine VLAN (VLAN 99) -> Redirected to Remediation Server ✕
+  const showSwitch = currentStepIndex >= 1;
+  const showNac = currentStepIndex >= 2;
+  const showVlans = currentStepIndex >= 3;
+  const showCables = currentStepIndex >= 4;
 
-  const isNonCompliantPhase = currentStepIndex >= 5;
+  const isScenarioBQuarantine = currentStepIndex >= 13;
 
-  const showNac = currentStepIndex >= 1;
-  const showVlans = currentStepIndex >= 2;
+  let packetX = -100;
+  let packetY = 75;
+  let showPacket = false;
+  let packetLabel = '802.1X EAPOL';
+  let packetSub = 'EAP-TLS Handshake';
+  let packetColor = '#0284c7';
 
-  const isCompliantAllowed = currentStepIndex >= 3 && currentStepIndex <= 4;
-  const isQuarantined = currentStepIndex >= 8;
+  if (currentStepIndex === 5 || currentStepIndex === 6) {
+    showPacket = true;
+    packetX = 180;
+    packetLabel = 'RADIUS ACCESS-REQ';
+    packetSub = 'Identity + Cert';
+  } else if (currentStepIndex === 7 || currentStepIndex === 8) {
+    showPacket = true;
+    packetX = 310;
+    packetLabel = 'POSTURE ASSESSMENT';
+    packetSub = 'Antivirus + EDR Check';
+    packetColor = '#8b5cf6';
+  } else if (currentStepIndex === 9 || currentStepIndex === 10) {
+    showPacket = true;
+    packetX = 310;
+    packetLabel = 'RADIUS ACCEPT: VLAN 10';
+    packetSub = 'Tunnel-Group: 10 (Prod)';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 11 || currentStepIndex === 12) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'PROD VLAN 10 ACCESS';
+    packetSub = 'Authorized Corporate Data';
+    packetColor = '#10b981';
+  } else if (currentStepIndex === 14 || currentStepIndex === 15) {
+    showPacket = true;
+    packetX = 310;
+    packetLabel = 'POSTURE FAILED ✕';
+    packetSub = 'RADIUS ACCEPT: VLAN 99';
+    packetColor = '#ef4444';
+  } else if (currentStepIndex >= 16) {
+    showPacket = true;
+    packetX = 510;
+    packetLabel = 'QUARANTINE VLAN 99';
+    packetSub = 'Remediation Server Only';
+    packetColor = '#f59e0b';
+  }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
       {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isNonCompliantPhase ? '#fef2f2' : '#ecfdf5'} stroke={isNonCompliantPhase ? '#f87171' : '#34d399'} />
-        <text x="340" y="16" textAnchor="middle" fill={isNonCompliantPhase ? '#991b1b' : '#065f46'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isNonCompliantPhase
-            ? 'ENDPOINT 2: FAILED POSTURE (NO AV) → QUARANTINED TO VLAN 99 (REMEDIATION) ✕'
-            : 'ENDPOINT 1: VALID 802.1X + PASS POSTURE → ASSIGNED TO PRODUCTION VLAN 10 ✓'}
+      <g transform="translate(40, 10)">
+        <rect
+          x="0"
+          y="0"
+          width="680"
+          height="22"
+          rx="11"
+          fill={isScenarioBQuarantine ? '#fffbeb' : currentStepIndex >= 10 ? '#f0fdf4' : '#eff6ff'}
+          stroke={isScenarioBQuarantine ? '#fcd34d' : currentStepIndex >= 10 ? '#86efac' : '#93c5fd'}
+        />
+        <text
+          x="340"
+          y="15"
+          textAnchor="middle"
+          fill={isScenarioBQuarantine ? '#b45309' : currentStepIndex >= 10 ? '#15803d' : '#1e40af'}
+          fontSize="8.5"
+          fontWeight="bold"
+          fontFamily="monospace"
+        >
+          {isScenarioBQuarantine
+            ? 'NAC POSTURE FAILED: NON-COMPLIANT ENDPOINT ISOLATED IN QUARANTINE VLAN 99 FOR REMEDIATION ⚠'
+            : currentStepIndex >= 10
+            ? 'NAC POSTURE PASSED: 802.1X CERT VALIDATED ➔ DYNAMIC ASSIGNMENT TO PRODUCTION VLAN 10 ✓'
+            : 'NETWORK ACCESS CONTROL (NAC) LAB: IEEE 802.1X AUTHENTICATION &amp; DYNAMIC POSTURE ASSESSMENT'}
         </text>
       </g>
 
-      {/* Links */}
-      {showNac && (
-        <BoldArrow
-          from={{ x: 130, y: 170 }}
-          to={{ x: 330, y: 170 }}
-          color={isNonCompliantPhase ? (isQuarantined ? '#f59e0b' : '#64748b') : (isCompliantAllowed ? '#10b981' : '#3b82f6')}
-          dashed={currentStepIndex < 3}
-          label={currentStepIndex >= 3 ? '802.1X EAP / Posture' : undefined}
-        />
-      )}
-
-      {showVlans && (
-        <>
-          <BoldArrow
-            from={{ x: 450, y: 150 }}
-            to={{ x: 620, y: 110 }}
-            color={isCompliantAllowed ? '#10b981' : '#94a3b8'}
-            dashed={!isCompliantAllowed}
-            label={isCompliantAllowed ? 'VLAN 10 (Prod Access)' : undefined}
-          />
-          <BoldArrow
-            from={{ x: 450, y: 190 }}
-            to={{ x: 620, y: 240 }}
-            color={isQuarantined ? '#f59e0b' : '#94a3b8'}
-            dashed={!isQuarantined}
-            label={isQuarantined ? 'VLAN 99 (Quarantine / Patch)' : undefined}
-          />
-        </>
-      )}
-
-      {/* Endpoint */}
-      <g transform="translate(40, 120)">
-        <LaptopNode
-          label={isNonCompliantPhase ? 'Unmanaged / BYOD' : 'Corporate Laptop'}
-          sublabel={isNonCompliantPhase ? 'Posture: AV Disabled' : 'Posture: Healthy & EDR Up'}
-          ip={isNonCompliantPhase ? 'MAC: b4:99:ba:01:23' : 'MAC: 00:50:56:c0:00'}
-        />
-      </g>
-
-      {/* NAC Controller */}
-      {showNac && (
-        <g transform="translate(330, 110)">
-          <FirewallGatewayNode
-            label="NAC Policy Engine"
-            sublabel="802.1X / RADIUS Server"
-            status={isNonCompliantPhase ? (isQuarantined ? 'DENIED' : 'CHECKING') : (isCompliantAllowed ? 'PERMIT' : 'READY')}
-          />
+      {/* Network Cables */}
+      {showCables && (
+        <g opacity="0.6">
+          <line x1="120" y1="75" x2="210" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          <line x1="270" y1="75" x2="330" y2="75" stroke="#94a3b8" strokeWidth="2" strokeDasharray="4,4" />
+          {/* Top Cable to Prod VLAN */}
+          <line x1="410" y1="55" x2="610" y2="55" stroke="#10b981" strokeWidth="2" strokeDasharray="4,4" />
+          {/* Bottom Cable to Quarantine VLAN */}
+          <line x1="410" y1="95" x2="610" y2="95" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />
         </g>
       )}
 
-      {/* VLAN Destinations */}
+      {/* Transit arrows */}
+      {(currentStepIndex === 5 || currentStepIndex === 14) && (
+        <BoldArrow x1="120" y1="75" x2="210" y2="75" color={isScenarioBQuarantine ? '#ef4444' : '#0284c7'} label="EAPOL" />
+      )}
+      {(currentStepIndex === 11 || currentStepIndex === 12) && (
+        <BoldArrow x1="410" y1="55" x2="610" y2="55" color="#10b981" label="VLAN 10 TRAFFIC" />
+      )}
+      {currentStepIndex >= 16 && (
+        <BoldArrow x1="410" y1="95" x2="610" y2="95" color="#f59e0b" label="VLAN 99 ISOLATED" />
+      )}
+
+      {/* Client Laptop */}
+      <LaptopNode
+        cx={80}
+        cy={75}
+        label={isScenarioBQuarantine ? 'NON-COMPLIANT LAPTOP' : 'CORPORATE LAPTOP'}
+        ip={isScenarioBQuarantine ? 'Stale Antivirus / No Patch' : 'EAP-TLS Cert (Healthy)'}
+        active
+        danger={isScenarioBQuarantine}
+        success={currentStepIndex >= 10 && !isScenarioBQuarantine}
+      />
+
+      {/* Switch Authenticator */}
+      {showSwitch && (
+        <g transform="translate(240, 75)">
+          <rect
+            x="-30"
+            y="-22"
+            width="60"
+            height="38"
+            rx="6"
+            fill="#0f172a"
+            stroke="#0284c7"
+            strokeWidth={2}
+          />
+          <text x="0" y="-6" textAnchor="middle" fill="#38bdf8" fontSize="7" fontWeight="bold">SWITCH</text>
+          <text x="0" y="7" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontFamily="monospace">802.1X</text>
+          <text x="0" y="22" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="#0f172a">AUTHENTICATOR</text>
+        </g>
+      )}
+
+      {/* NAC Server (ISE / ClearPass) */}
+      {showNac && (
+        <g transform="translate(370, 75)">
+          <rect
+            x="-38"
+            y="-25"
+            width="76"
+            height="42"
+            rx="6"
+            fill="#0f172a"
+            stroke={isScenarioBQuarantine ? '#f59e0b' : currentStepIndex >= 10 ? '#10b981' : '#0284c7'}
+            strokeWidth={2}
+          />
+          <text x="0" y="-8" textAnchor="middle" fill="#38bdf8" fontSize="7.5" fontWeight="bold">NAC SERVER</text>
+          <text x="0" y="5" textAnchor="middle" fill="#ffffff" fontSize="6.5" fontFamily="monospace">ISE / CLEARPASS</text>
+          <text x="0" y="22" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#0f172a">RADIUS / POLICY</text>
+        </g>
+      )}
+
+      {/* Production VLAN 10 */}
       {showVlans && (
-        <>
-          <g transform="translate(620, 70)">
-            <ServerNodeSVG
-              label="VLAN 10: Production"
-              sublabel="Full Intranet Access"
-              status={isCompliantAllowed ? 'active' : 'standby'}
-            />
-            {isCompliantAllowed && (
-              <g transform="translate(0, 70)">
-                <rect x="-10" y="0" width="100" height="18" rx="4" fill="#065f46" />
-                <text x="40" y="12" textAnchor="middle" fill="#a7f3d0" fontSize="8" fontWeight="bold">
-                  CONNECTED ✓
-                </text>
-              </g>
-            )}
+        <ServerNodeSVG
+          cx={650}
+          cy={55}
+          label="PRODUCTION VLAN 10"
+          sub="Corporate Core Data"
+          active
+          success={currentStepIndex >= 10 && !isScenarioBQuarantine}
+        />
+      )}
+
+      {/* Quarantine VLAN 99 */}
+      {showVlans && (
+        <ServerNodeSVG
+          cx={650}
+          cy={105}
+          label="QUARANTINE VLAN 99"
+          sub="Remediation Patch Server"
+          active
+          danger={isScenarioBQuarantine}
+        />
+      )}
+
+      {/* Moving Packet */}
+      {showPacket && (
+        <PacketCard
+          cx={packetX}
+          cy={currentStepIndex >= 16 ? 95 : currentStepIndex >= 11 && currentStepIndex <= 12 ? 55 : 75}
+          label={packetLabel}
+          sub={packetSub}
+          color={packetColor}
+        />
+      )}
+
+      {/* Bottom Technical Breakdown Panel */}
+      <g transform="translate(30, 140)">
+        <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+        <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
+        <text x="16" y="17" fill="#ffffff" fontSize="9.5" fontWeight="bold">
+          802.1X / RADIUS NAC STATE MACHINE &amp; DYNAMIC VLAN AUTHORIZATION
+        </text>
+
+        {/* Left: NAC Policy Evaluation Breakdown */}
+        <g transform="translate(16, 36)">
+          <rect x="0" y="0" width="325" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="10" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">RADIUS POLICY ASSESSMENT STAGES:</text>
+
+          <g transform="translate(8, 24)">
+            <rect x="0" y="0" width="309" height="20" rx="3" fill="#0f172a" />
+            <text x="10" y="14" fill="#38bdf8" fontSize="7" fontFamily="monospace">Phase             Result           Assigned Action</text>
+
+            <rect x="0" y="24" width="309" height="22" rx="3" fill="#dcfce7" stroke="#86efac" />
+            <text x="10" y="38" fill="#059669" fontSize="7.5" fontFamily="monospace">1. 802.1X EAP-TLS   PASSED ✓         Identity: host/laptop01.corp</text>
+
+            <rect x="0" y="48" width="309" height="22" rx="3" fill={isScenarioBQuarantine ? '#fee2e2' : '#dcfce7'} stroke={isScenarioBQuarantine ? '#fca5a5' : '#86efac'} />
+            <text x="10" y="62" fill={isScenarioBQuarantine ? '#991b1b' : '#059669'} fontSize="7.5" fontFamily="monospace">
+              {isScenarioBQuarantine ? '2. Posture Check   FAILED ✕         AV Definition &gt; 30 days old' : '2. Posture Check   PASSED ✓         AV Up-to-date &amp; BitLocker ON'}
+            </text>
+
+            <rect x="0" y="72" width="309" height="26" rx="3" fill={isScenarioBQuarantine ? '#fffbeb' : '#f0fdf4'} stroke={isScenarioBQuarantine ? '#fcd34d' : '#10b981'} />
+            <text x="10" y="88" fill={isScenarioBQuarantine ? '#b45309' : '#15803d'} fontSize="7.5" fontWeight="bold">
+              {isScenarioBQuarantine
+                ? 'RADIUS VSA: Tunnel-Private-Group-ID = 99 (QUARANTINE)'
+                : 'RADIUS VSA: Tunnel-Private-Group-ID = 10 (PRODUCTION)'}
+            </text>
           </g>
 
-          <g transform="translate(620, 200)">
-            <ServerNodeSVG
-              label="VLAN 99: Quarantine"
-              sublabel="Patch Server Only"
-              status={isQuarantined ? 'threat' : 'standby'}
-            />
-            {isQuarantined && (
-              <g transform="translate(0, 70)">
-                <rect x="-10" y="0" width="100" height="18" rx="4" fill="#78350f" />
-                <text x="40" y="12" textAnchor="middle" fill="#fde68a" fontSize="8" fontWeight="bold">
-                  ISOLATED ✕
-                </text>
-              </g>
-            )}
+          <text x="10" y="132" fill="#64748b" fontSize="7.5">
+            Switch Port State: <tspan fill={isScenarioBQuarantine ? '#b45309' : '#059669'} fontWeight="bold">{isScenarioBQuarantine ? 'Port in Remediation Mode (VLAN 99)' : 'Port Unblocked in Production Mode (VLAN 10)'}</tspan>
+          </text>
+        </g>
+
+        {/* Right: Technical Inspector & Architecture */}
+        <g transform="translate(355, 36)">
+          <rect x="0" y="0" width="330" height="142" rx="6" fill="#f8fafc" stroke="#cbd5e1" />
+          <text x="12" y="16" fill="#0f172a" fontSize="8.5" fontWeight="bold">NAC SECURITY TRIAD ARCHITECTURE:</text>
+
+          <g transform="translate(12, 24)">
+            <rect x="0" y="0" width="306" height="48" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">1. Authentication (Who are you?):</text>
+            <text x="10" y="27" fill="#475569" fontSize="7">Validates machine &amp; user credentials via 802.1X (EAP-TLS / PEAP).</text>
+            <text x="10" y="39" fill="#059669" fontSize="7">Guarantees device is an authentic corporate asset.</text>
           </g>
-        </>
-      )}
 
-      {/* Packets */}
-      {currentStepIndex === 3 && (
-        <PacketCard
-          x={210}
-          y={145}
-          title="POSTURE TELEMETRY"
-          src="Corporate Endpoint"
-          dst="NAC RADIUS Server"
-          detail="EAP-TLS Cert: Valid | Patch: 100%"
-          type="allow"
-        />
-      )}
+          <g transform="translate(12, 76)">
+            <rect x="0" y="0" width="306" height="56" rx="4" fill="#ffffff" stroke="#e2e8f0" />
+            <text x="10" y="14" fill="#0f172a" fontSize="7.5" fontWeight="bold">2. Posture Assessment (Are you healthy?):</text>
+            <text x="10" y="27" fill="#475569" fontSize="7">• Verifies Antivirus, Firewall, OS Hotfixes, and Disk Encryption.</text>
+            <text x="10" y="39" fill="#b45309" fontSize="7">• Failed posture isolates host to Quarantine VLAN 99 for auto-patching.</text>
+            <text x="10" y="50" fill="#0284c7" fontSize="7" fontWeight="bold">✔ Prevents infected or unpatched machines from contaminating LAN.</text>
+          </g>
+        </g>
+      </g>
 
-      {currentStepIndex === 4 && (
-        <PacketCard
-          x={510}
-          y={95}
-          title="RADIUS ACCESS-ACCEPT"
-          src="NAC Engine"
-          dst="Switch Port / Prod VLAN"
-          detail="Authorize VLAN 10 (Full Intranet)"
-          type="allow"
-        />
-      )}
-
-      {currentStepIndex === 6 && (
-        <PacketCard
-          x={190}
-          y={145}
-          title="POSTURE TELEMETRY"
-          src="Unmanaged Endpoint"
-          dst="NAC RADIUS Server"
-          detail="EDR Missing | Antivirus: Stale"
-          type="deny"
-        />
-      )}
-
-      {currentStepIndex >= 7 && isNonCompliantPhase && (
-        <PacketCard
-          x={340}
-          y={235}
-          title={isQuarantined ? "ASSIGNED TO QUARANTINE VLAN" : "EVALUATING COMPLIANCE"}
-          src="NAC Server"
-          dst="VLAN 99 Remediation"
-          detail="Restricted to AV update repository"
-          type="deny"
-        />
-      )}
+      {/* Compact Status Indicator */}
+      <g transform="translate(40, 324)">
+        <text x="340" y="10" textAnchor="middle" fill="#64748b" fontSize="8" fontFamily="monospace">
+          {currentStepIndex >= 16
+            ? 'RESULT: ✓ NAC ENFORCEMENT COMPLETE — HEALTHY ➔ PROD VLAN 10, STALE ➔ QUARANTINE VLAN 99'
+            : currentStepIndex >= 13
+            ? 'SCENARIO B: POSTURE CHECK FAILS ➔ DYNAMICALLY QUARANTINED TO VLAN 99'
+            : currentStepIndex >= 10
+            ? 'SCENARIO A: ✓ POSTURE COMPLIANT ➔ ACCESS GRANTED TO PRODUCTION VLAN 10'
+            : 'READY — ADVANCE STEP TO TRACE NAC 802.1X &amp; POSTURE ASSESSMENT FLOW'}
+        </text>
+      </g>
     </svg>
   );
 };

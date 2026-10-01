@@ -9,140 +9,190 @@ interface Props {
 }
 
 export const Q30EgressFilteringVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
-  // Scenario 1: Normal Authorized Outbound HTTPS (Steps 0-7)
-  // Step 1: Internal Workstation appears
-  // Step 2: Egress Firewall appears
-  // Step 3: Internet appears
-  // Step 4: Workstation creates HTTPS packet (Port 443)
-  // Step 5: Packet moves to firewall
-  // Step 6: Outbound rule checked (ALLOW Inside -> WAN 443)
-  // Step 7: Packet reaches Internet (Delivered ✓) - STOP
+  // SCENARIO 1: AUTHORIZED OUTBOUND HTTPS (Steps 0-9)
+  // Step 0: Internal client appears (10.0.1.50)
+  // Step 1: Firewall with Egress Policy appears
+  // Step 2: Public Internet Destination appears
+  // Step 3: Outbound cables drawn
+  // Step 4: Approved HTTPS packet created (10.0.1.50 -> 198.51.100.25:443)
+  // Step 5: Packet moves: CLIENT -> FIREWALL
+  // Step 6: Firewall inspects Egress policy: ALLOW LAN -> WAN (Port 443)
+  // Step 7: Action: ALLOW
+  // Step 8: Packet moves: FIREWALL -> INTERNET
+  // Step 9: Internet destination receives packet & returns response (SCENARIO 1 COMPLETE ✓) - STOP
   //
-  // Scenario 2: Suspicious Malicious Outbound C2 Traffic (Steps 8-12)
-  // Step 8: Compromised Workstation creates C2 Beacon packet (Unauthorized Port 4444 / 25 / C2 IP)
-  // Step 9: Malicious packet moves to firewall
-  // Step 10: Egress policy flags unauthorized port / untrusted external IP
-  // Step 11: Egress Firewall action: DENY & DROP
-  // Step 12: Packet stops at firewall (✕ BLOCKED AT FW). C2 connection severed & data exfiltration stopped!
+  // SCENARIO 2: MALICIOUS C2 REVERSE SHELL ATTEMPT (Steps 10-16)
+  // Step 10: Infected internal host generates C2 beacon on unauthorized Port 4444 (10.0.1.50 -> 203.0.113.99:4444)
+  // Step 11: Packet moves: INFECTED HOST -> FIREWALL
+  // Step 12: Firewall checks Egress policy: Port 4444 is not in approved egress whitelist
+  // Step 13: Action: DENY / DROP
+  // Step 14: Packet physically stops at Firewall (BLOCKED ✕)
+  // Step 15: Security alert logged: "C2 Exfiltration Beacon Blocked"
+  // Step 16: Public Internet never receives packet; malware C2 channel severed ✓
 
-  const isMaliciousPhase = currentStepIndex >= 7;
+  const isMalwareScenario = currentStepIndex >= 10;
 
   const showFw = currentStepIndex >= 1;
   const showInternet = currentStepIndex >= 2;
+  const showCables = currentStepIndex >= 3;
 
-  const isNormalDelivered = currentStepIndex === 6;
-  const isMaliciousBlocked = currentStepIndex >= 10;
+  const isDeliveredScenario1 = currentStepIndex >= 8 && currentStepIndex <= 9;
+  const isBlockedScenario2 = currentStepIndex >= 13;
 
-  let packetX = 90;
-  if (!isMaliciousPhase) {
-    if (currentStepIndex === 3) packetX = 90;
-    else if (currentStepIndex === 4) packetX = 220;
-    else if (currentStepIndex === 5) packetX = 370;
-    else if (currentStepIndex >= 6) packetX = 650;
+  let packetX = 80;
+  if (!isMalwareScenario) {
+    if (currentStepIndex <= 4) packetX = 80;
+    else if (currentStepIndex === 5) packetX = 230;
+    else if (currentStepIndex >= 6 && currentStepIndex <= 7) packetX = 370;
+    else if (currentStepIndex === 8) packetX = 510;
+    else if (currentStepIndex >= 9) packetX = 660;
   } else {
-    if (currentStepIndex === 7 || currentStepIndex === 8) packetX = 90;
-    else if (currentStepIndex === 9) packetX = 220;
-    else if (currentStepIndex >= 10) packetX = 370;
+    if (currentStepIndex === 10) packetX = 80;
+    else if (currentStepIndex === 11) packetX = 230;
+    else if (currentStepIndex >= 12) packetX = 370;
   }
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
-      {/* Banner */}
-      <g transform="translate(40, 14)">
-        <rect x="0" y="0" width="680" height="24" rx="12" fill={isMaliciousPhase ? '#fef2f2' : '#eff6ff'} stroke={isMaliciousPhase ? '#fca5a5' : '#93c5fd'} />
-        <text x="340" y="16" textAnchor="middle" fill={isMaliciousPhase ? '#991b1b' : '#1e40af'} fontSize="9" fontWeight="bold" fontFamily="monospace">
-          {isMaliciousPhase
-            ? 'EGRESS THREAT: MALICIOUS OUTBOUND C2 BEACON (PORT 4444) BLOCKED AT EGRESS BOUNDARY ✕'
-            : 'NORMAL EGRESS: LEGITIMATE OUTBOUND HTTPS (PORT 443) PERMITTED OUT TO WAN ✓'}
-        </text>
-      </g>
+      {/* Cables */}
+      {showCables && (
+        <line x1="80" y1="75" x2="660" y2="75" stroke="#cbd5e1" strokeWidth="2.5" strokeDasharray="4 4" />
+      )}
 
-      {/* Baseline cable */}
-      {showInternet && (
-        <line x1="90" y1="70" x2="650" y2="70" stroke="#cbd5e1" strokeWidth="3" strokeDasharray="4 4" />
+      {/* Movement Arrows */}
+      {!isMalwareScenario && currentStepIndex === 5 && (
+        <BoldArrow x1={115} y1={75} x2={325} y2={75} color="#2563eb" label="OUTBOUND HTTPS →" />
+      )}
+      {!isMalwareScenario && currentStepIndex === 8 && (
+        <BoldArrow x1={415} y1={75} x2={615} y2={75} color="#10b981" label="TO INTERNET →" />
+      )}
+      {isMalwareScenario && currentStepIndex === 11 && (
+        <BoldArrow x1={115} y1={75} x2={325} y2={75} color="#ef4444" label="C2 BEACON ATTEMPT →" />
       )}
 
       {/* Nodes */}
-      <LaptopNode cx={90} cy={70} label={isMaliciousPhase ? 'INFECTED CLIENT' : 'INTERNAL CLIENT'} ip="10.0.1.25" active danger={isMaliciousPhase} />
+      <LaptopNode
+        cx={80}
+        cy={75}
+        label={isMalwareScenario ? 'INFECTED HOST' : 'INTERNAL CLIENT'}
+        ip="10.0.1.50"
+        active={!isMalwareScenario ? currentStepIndex <= 5 : currentStepIndex <= 11}
+      />
 
       {showFw && (
-        <FirewallGatewayNode cx={370} cy={70} label="EGRESS FIREWALL" sub="Outbound Policy Inspection" active success={isNormalDelivered} danger={isMaliciousBlocked} />
-      )}
-
-      {showInternet && (
-        <ServerNodeSVG cx={650} cy={70} label={isMaliciousPhase ? 'ATTACKER C2 SERVER' : 'PUBLIC INTERNET'} sub={isMaliciousPhase ? '198.51.100.99:4444' : 'WAN:443'} active danger={isMaliciousPhase} success={isNormalDelivered} />
-      )}
-
-      {/* Motion Arrows */}
-      {!isMaliciousPhase ? (
-        <>
-          {currentStepIndex === 4 && (
-            <BoldArrow x1={130} y1={70} x2={330} y2={70} color="#2563eb" label="OUTBOUND :443" />
-          )}
-          {currentStepIndex >= 6 && (
-            <BoldArrow x1={410} y1={70} x2={615} y2={70} color="#10b981" label="EGRESS ALLOWED ✓" />
-          )}
-        </>
-      ) : (
-        <>
-          {currentStepIndex === 9 && (
-            <BoldArrow x1={130} y1={70} x2={330} y2={70} color="#ef4444" label="C2 BEACON :4444" />
-          )}
-          {isMaliciousBlocked && (
-            <g transform="translate(370, 70)">
-              <line x1="45" y1="-25" x2="45" y2="25" stroke="#ef4444" strokeWidth="4" strokeLinecap="round" />
-              <rect x="55" y="-12" width="115" height="24" rx="12" fill="#fef2f2" stroke="#ef4444" strokeWidth="1.5" />
-              <text x="112" y="4" textAnchor="middle" fill="#991b1b" fontSize="8" fontWeight="bold" fontFamily="monospace">
-                EGRESS BLOCKED ✕
-              </text>
-            </g>
-          )}
-        </>
-      )}
-
-      {/* Packet Card */}
-      {((!isMaliciousPhase && currentStepIndex >= 3) || (isMaliciousPhase && currentStepIndex >= 8)) && (
-        <PacketCard
-          cx={packetX}
-          cy={28}
-          title={isMaliciousPhase ? 'C2 REVERSE SHELL' : 'OUTBOUND WEB'}
-          protocol="TCP"
-          port={isMaliciousPhase ? '4444' : '443'}
-          src="10.0.1.25"
-          dst={isMaliciousPhase ? 'C2_SERVER' : 'INTERNET'}
-          status={isMaliciousBlocked ? 'DENY' : isNormalDelivered ? 'ALLOW' : 'NORMAL'}
-          scale={0.78}
+        <FirewallGatewayNode
+          cx={370}
+          cy={75}
+          label="EGRESS FIREWALL"
+          sub={isBlockedScenario2 ? 'EGRESS BLOCKED ✕' : 'Egress Policy'}
+          active={
+            (!isMalwareScenario && currentStepIndex >= 6 && currentStepIndex <= 7) ||
+            (isMalwareScenario && currentStepIndex >= 12)
+          }
+          success={isDeliveredScenario1}
         />
       )}
 
-      {/* Lower Egress Security Matrix */}
-      <g transform="translate(30, 140)">
-        <rect x="0" y="0" width="700" height="190" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+      {showInternet && (
+        <ServerNodeSVG
+          cx={660}
+          cy={75}
+          label={isMalwareScenario ? 'ATTACKER C2 SERVER' : 'PUBLIC SAAS SERVER'}
+          sub={isMalwareScenario ? '203.0.113.99:4444' : '198.51.100.25:443'}
+          active={isDeliveredScenario1}
+          success={isDeliveredScenario1}
+          statusText={
+            isDeliveredScenario1
+              ? 'ACCEPTED ✓'
+              : isBlockedScenario2
+              ? 'ISOLATED (0 PKTS)'
+              : 'STANDBY'
+          }
+        />
+      )}
+
+      {/* Packet Card */}
+      {((!isMalwareScenario && currentStepIndex >= 4) || (isMalwareScenario && currentStepIndex >= 10)) && (
+        <g className="animate-pop-in transition-all duration-500">
+          <PacketCard
+            cx={packetX}
+            cy={28}
+            title={
+              !isMalwareScenario
+                ? currentStepIndex >= 7
+                  ? 'ALLOW ✓'
+                  : 'HTTPS REQ'
+                : isBlockedScenario2
+                ? 'BLOCKED ✕'
+                : 'C2 BEACON'
+            }
+            protocol="TCP"
+            port={isMalwareScenario ? '4444' : '443'}
+            src="10.0.1.50"
+            dst={isMalwareScenario ? '203.0.113.99' : '198.51.100.25'}
+            status={
+              !isMalwareScenario
+                ? currentStepIndex >= 7
+                  ? 'ALLOW'
+                  : 'NORMAL'
+                : isBlockedScenario2
+                ? 'DENY'
+                : 'INSPECT'
+            }
+            scale={0.78}
+          />
+        </g>
+      )}
+
+      {/* Lower Technical Deep-Dive Panel */}
+      <g transform="translate(30, 145)">
+        <rect x="0" y="0" width="700" height="185" rx="10" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
         <rect x="0" y="0" width="700" height="26" rx="9" fill="#0f172a" />
         <text x="16" y="17" fill="#ffffff" fontSize="10" fontWeight="bold">
-          WHY EGRESS (OUTBOUND) FILTERING IS CRUCIAL FOR ENTERPRISE SECURITY
+          {isMalwareScenario
+            ? 'SCENARIO 2: EGRESS FILTERING DROPS MALWARE REVERSE SHELL & C2 BEACON'
+            : 'SCENARIO 1: EGRESS POLICY PERMITS AUTHORIZED OUTBOUND WEB TRAFFIC'}
         </text>
 
-        <g transform="translate(16, 36)">
-          <rect x="0" y="0" width="325" height="98" rx="6" fill="#eff6ff" stroke="#93c5fd" />
-          <text x="10" y="16" fill="#1e40af" fontSize="8.5" fontWeight="bold">1. PREVENTS DATA EXFILTRATION & C2 CALLS:</text>
-          <text x="12" y="34" fill="#0f172a" fontSize="7.5">Most ransomware and trojans infect a host and phone home to C2.</text>
-          <text x="12" y="48" fill="#64748b" fontSize="7">By blocking outbound non-standard ports (e.g. 4444, 1337, 6667), the malware cannot receive execution commands or upload stolen data.</text>
-          <text x="12" y="78" fill="#059669" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Policy: ALLOW only Ports 80, 443, 53, 123</text>
-
-          <rect x="345" y="0" width="325" height="98" rx="6" fill="#f0fdf4" stroke="#86efac" />
-          <text x="355" y="16" fill="#065f46" fontSize="8.5" fontWeight="bold">2. BLOCKS SPAM BOTNETS & LATERAL SPILLS:</text>
-          <text x="359" y="34" fill="#0f172a" fontSize="7.5">Blocks outbound SMTP (Port 25) from general employee laptops.</text>
-          <text x="359" y="48" fill="#64748b" fontSize="7">Prevents infected corporate machines from turning into spam relays or participating in distributed DDoS attacks against third parties.</text>
-          <text x="359" y="78" fill="#059669" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Blocks: Outbound SMB (445) & Telnet (23)</text>
-        </g>
-
-        <g transform="translate(16, 142)">
-          <rect x="0" y="0" width="668" height="38" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
-          <text x="14" y="15" fill="#334155" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
-            SUMMARY: A firewall that only filters Inbound traffic is only doing half its job. Egress filtering contains breaches.
-          </text>
-        </g>
+        {!isMalwareScenario ? (
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#f8fafc" stroke="#cbd5e1" />
+            <text x="12" y="18" fill="#15803d" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              APPROVED OUTBOUND POLICY (PORT 443):
+            </text>
+            <g transform="translate(10, 24)">
+              <rect x="0" y="0" width="648" height="32" rx="4" fill={currentStepIndex >= 6 ? '#dcfce7' : '#ffffff'} stroke={currentStepIndex >= 6 ? '#16a34a' : '#cbd5e1'} strokeWidth={1.5} />
+              <text x="10" y="20" fill={currentStepIndex >= 6 ? '#15803d' : '#0f172a'} fontSize="8" fontWeight="bold" fontFamily="monospace">
+                Egress Rule 1: ALLOW SRC=10.0.1.0/24 DST=ANY:443 PROTO=TCP {currentStepIndex >= 6 && '→ MATCH: PERMIT ✓'}
+              </text>
+            </g>
+            <text x="12" y="78" fill="#0f172a" fontSize="7.5">
+              • Authorized corporate business traffic flows to public SaaS providers smoothly.
+            </text>
+            <text x="12" y="96" fill="#0f172a" fontSize="7.5">
+              • Stateful inspection logs the outbound session and permits return traffic automatically.
+            </text>
+          </g>
+        ) : (
+          <g transform="translate(16, 36)" className="animate-pop-in">
+            <rect x="0" y="0" width="668" height="130" rx="4" fill="#fef2f2" stroke="#f87171" strokeWidth="1.5" />
+            <text x="12" y="18" fill="#991b1b" fontSize="8.5" fontWeight="bold" fontFamily="monospace">
+              UNAUTHORIZED EGRESS ATTEMPT (PORT 4444 REVERSE SHELL):
+            </text>
+            <text x="12" y="38" fill="#0f172a" fontSize="7.5">
+              1. Infected host attempts to establish outbound C2 tunnel to external IP on Port 4444.
+            </text>
+            <text x="12" y="54" fill="#0f172a" fontSize="7.5">
+              2. Firewall evaluates outbound policy: Port 4444 is NOT permitted in the egress whitelist.
+            </text>
+            <text x="12" y="72" fill="#dc2626" fontSize="8" fontWeight="bold" fontFamily="monospace">
+              3. ACTION: EGRESS DROP ✕ (Packet halted at firewall; C2 connection severed).
+            </text>
+            <text x="12" y="94" fill="#15803d" fontSize="7.5" fontWeight="bold">
+              EGRESS IMPORTANCE: Stops data exfiltration, disables ransomware keys, and prevents botnet participation.
+            </text>
+          </g>
+        )}
       </g>
     </svg>
   );
