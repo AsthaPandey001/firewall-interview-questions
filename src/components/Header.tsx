@@ -90,17 +90,17 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
         </div>
 
-        {/* Right Side: Search bar, Notification Bell */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        {/* Right Side: Search bar, Notification Bell (Desktop only) */}
+        <div className="hidden sm:flex items-center gap-1.5 sm:gap-3 shrink-0">
           
-          {/* Clean Airy Search Input - Mobile Optimized */}
+          {/* Clean Airy Search Input */}
           <button
             onClick={onOpenSearch}
-            className="flex items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-700 max-w-[130px] sm:max-w-none sm:w-52 md:w-60"
+            className="flex items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-700 max-w-[130px] sm:max-w-none sm:w-52 md:w-60 cursor-pointer"
             title="Search questions (Ctrl+K)"
           >
             <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="truncate text-left hidden xs:inline sm:inline">Search...</span>
+            <span className="truncate text-left">Search...</span>
             <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
               ⌘K
             </kbd>
