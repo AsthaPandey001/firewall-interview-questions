@@ -16,25 +16,27 @@ export const StepProgressNav: React.FC<StepProgressNavProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const activeStepRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-scroll the active step into view on mobile
+  // Auto-scroll the active step into view, guaranteeing Step 1 is completely visible on start
   useEffect(() => {
-    if (activeStepRef.current && containerRef.current) {
+    if (currentStepIndex === 0 && containerRef.current) {
+      containerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (activeStepRef.current && containerRef.current) {
       activeStepRef.current.scrollIntoView({
         behavior: 'smooth',
-        inline: 'nearest',
+        inline: 'center',
         block: 'nearest'
       });
     }
-  }, [currentStepIndex]);
+  }, [currentStepIndex, steps]);
 
   if (!steps || steps.length <= 1) return null;
 
   return (
     <div 
       ref={containerRef}
-      className="w-full flex items-center justify-start sm:justify-center py-2 px-2 sm:px-4 overflow-x-auto no-scrollbar scroll-smooth"
+      className="w-full py-2 px-1 sm:px-2 overflow-x-auto no-scrollbar scroll-smooth"
     >
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 pl-1 pr-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-max mx-auto px-2">
         {steps.map((step, idx) => {
           const isCompleted = idx < currentStepIndex;
           const isActive = idx === currentStepIndex;
