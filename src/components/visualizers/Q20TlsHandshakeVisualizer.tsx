@@ -10,10 +10,10 @@ interface Props {
 
 export const Q20TlsHandshakeVisualizer: React.FC<Props> = ({ currentStepIndex }) => {
   const isClientHello = currentStepIndex === 1;
-  const isServerHello = currentStepIndex === 2;
-  const isCertVerified = currentStepIndex >= 3;
-  const isChannelSecure = currentStepIndex >= 3;
-  const isDataTraveling = currentStepIndex >= 4;
+  const isServerHello = currentStepIndex === 2 || currentStepIndex === 3;
+  const isCertVerified = currentStepIndex >= 4;
+  const isChannelSecure = currentStepIndex >= 5;
+  const isDataTraveling = currentStepIndex >= 6;
 
   return (
     <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">

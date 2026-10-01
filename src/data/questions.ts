@@ -197,40 +197,83 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Stateless Packet Filter (L3/L4)',
-        badge: 'Layer 3 & 4',
+        label: 'Stateless Packet Filter: Header Ingress (L3/L4)',
+        badge: 'Stateless L3/L4',
         activeNodes: ['filter-stateless'],
         packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 80, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'Inspects IP and Port headers only. Fast but lacks session memory; cannot automatically permit return traffic without static rules.',
-        interviewTakeaway: 'Stateless filters evaluate each packet in isolation, requiring explicit two-way rules for bidirectional traffic.'
+        whatIsHappening: 'Packet filter inspects Source IP, Dest IP, Protocol, and Port headers in isolation without tracking session state.',
+        interviewTakeaway: 'Fastest throughput but lacks memory; cannot dynamically allow return traffic without broad rules.'
       },
       {
         id: 2,
-        label: 'Stateful Inspection (State Table)',
-        badge: 'Session Aware',
-        activeNodes: ['filter-stateful'],
-        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        stateTable: [{ srcIp: '10.0.0.5', srcPort: 49152, dstIp: '198.51.100.1', dstPort: 443, protocol: 'TCP', state: 'SYN_SENT', timeout: '30s' }],
-        whatIsHappening: 'Validates TCP handshake and logs active connection in state table. Inbound return packets matching the table are allowed dynamically.',
-        interviewTakeaway: 'Stateful firewalls eliminate the need for opening ephemeral inbound ports manually.'
+        label: 'Stateless Packet Filter: Static ACL Execution',
+        badge: 'Static Filter',
+        activeNodes: ['filter-stateless'],
+        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 80, protocol: 'TCP' },
+        decision: 'ALLOW',
+        ruleMatched: 'Static Rule: ALLOW 10.0.0.0/24 -> 198.51.100.1:80',
+        whatIsHappening: 'Matches static permit statement. Forwarded without recording any session entry in RAM.',
+        interviewTakeaway: 'Requires two independent static rules for bidirectional client-server communication.'
       },
       {
         id: 3,
-        label: 'Application Proxy (L7 Terminator)',
-        badge: 'Full Proxy',
-        activeNodes: ['filter-proxy'],
-        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 80, protocol: 'HTTP', payloadSummary: 'GET /index.html HTTP/1.1' },
-        whatIsHappening: 'Terminates the client connection, buffers and sanitizes the application payload, then establishes a second connection to the server.',
-        interviewTakeaway: 'Provides maximum isolation and deep payload validation at the cost of processing latency.'
+        label: 'Stateful Inspection: Connection State Creation',
+        badge: 'State Table Init',
+        activeNodes: ['filter-stateful'],
+        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        stateTable: [{ srcIp: '10.0.0.5', srcPort: 49152, dstIp: '198.51.100.1', dstPort: 443, protocol: 'TCP', state: 'SYN_SENT', timeout: '30s' }],
+        whatIsHappening: 'Stateful firewall evaluates outbound SYN and records active session state with TCP sequence tracking.',
+        interviewTakeaway: 'State table dynamically permits return traffic matching the established session.'
       },
       {
         id: 4,
-        label: 'Next-Generation Firewall (NGFW)',
-        badge: 'DPI & App-ID',
+        label: 'Stateful Inspection: Dynamic Return Traffic Permitted',
+        badge: 'Session Matched ✓',
+        activeNodes: ['filter-stateful'],
+        packetInfo: { srcIp: '198.51.100.1', dstIp: '10.0.0.5', srcPort: 443, dstPort: 49152, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'ALLOW',
+        stateTable: [{ srcIp: '10.0.0.5', srcPort: 49152, dstIp: '198.51.100.1', dstPort: 443, protocol: 'TCP', state: 'ESTABLISHED', timeout: '3600s' }],
+        whatIsHappening: 'Return SYN-ACK matches active state table entry (Fast Path) and is forwarded without re-evaluating rule lists.',
+        interviewTakeaway: 'Eliminates opening wide ephemeral inbound ports on network perimeter.'
+      },
+      {
+        id: 5,
+        label: 'Application Proxy: Client Connection Termination (L7)',
+        badge: 'Proxy Ingress',
+        activeNodes: ['filter-proxy'],
+        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 80, protocol: 'HTTP', payloadSummary: 'GET /login.php HTTP/1.1' },
+        whatIsHappening: 'Proxy terminates incoming client TCP connection completely, acting as a protocol intermediary.',
+        interviewTakeaway: 'Prevents direct network-layer contact between untrusted client and backend server.'
+      },
+      {
+        id: 6,
+        label: 'Application Proxy: Payload Reconstruction & Egress',
+        badge: 'L7 Sanitized',
+        activeNodes: ['filter-proxy'],
+        packetInfo: { srcIp: 'Proxy_IP', dstIp: '198.51.100.1', dstPort: 80, protocol: 'HTTP', payloadSummary: 'Sanitized HTTP GET' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Proxy parses and sanitizes HTTP payload, then opens a brand-new independent TCP connection to the backend server.',
+        interviewTakeaway: 'Provides maximum payload isolation at the cost of processing latency.'
+      },
+      {
+        id: 7,
+        label: 'Next-Generation Firewall: TLS Decryption & App-ID',
+        badge: 'NGFW App-ID',
         activeNodes: ['filter-ngfw'],
-        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 443, protocol: 'TLS', payloadSummary: 'App-ID: Salesforce, Threat: Clean' },
-        whatIsHappening: 'Performs Deep Packet Inspection (DPI), decrypts TLS, identifies underlying application (App-ID), and scans for malware/CVEs simultaneously.',
-        interviewTakeaway: 'NGFWs look past port numbers to identify the actual application and enforce identity-based security policies.'
+        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 443, protocol: 'TLS', payloadSummary: 'App-ID: Salesforce, User: admin@corp' },
+        decision: 'INSPECT',
+        whatIsHappening: 'NGFW decrypts TLS stream and uses Deep Packet Inspection (DPI) to identify underlying application regardless of port.',
+        interviewTakeaway: 'App-ID looks beyond port numbers to enforce application-specific policy controls.'
+      },
+      {
+        id: 8,
+        label: 'Next-Generation Firewall: Threat Prevention & Delivery',
+        badge: 'NGFW Clean ✓',
+        activeNodes: ['filter-ngfw'],
+        packetInfo: { srcIp: '10.0.0.5', dstIp: '198.51.100.1', dstPort: 443, protocol: 'TLS', payloadSummary: 'Threat Signature Scan: Clean' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Single-pass engine scans payload for malware, CVE exploits, and data leaks before forwarding to destination.',
+        interviewTakeaway: 'Summary: Stateless (L3/L4), Stateful (State Table), Proxy (L7 Terminator), NGFW (DPI + App-ID + IPS).'
       }
     ]
   },
@@ -916,27 +959,81 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Order A: Specific Rule on Top',
-        badge: 'Correct Order',
+        label: 'Network Topology Initialized (Client 10.0.0.25)',
+        badge: 'Client Origin',
+        activeNodes: ['sim-order-correct'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Client prepares to send admin traffic on port 443. Firewall policy rule order determines the outcome.',
+        interviewTakeaway: 'The exact same packet will be tested against two different rule arrangements.'
+      },
+      {
+        id: 2,
+        label: 'Order A: Specific Permit Rule Placed at Position #1',
+        badge: 'Order A (Correct)',
+        activeNodes: ['sim-order-correct'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Rule 1: `ALLOW 10.0.0.25 -> 192.168.1.5:443`; Rule 2: `DENY ANY -> 192.168.1.5:443`.',
+        interviewTakeaway: 'Best practice: specific host/port exceptions must sit above general subnet rules.'
+      },
+      {
+        id: 3,
+        label: 'Order A: Packet Transits to Firewall',
+        badge: 'In Transit',
+        activeNodes: ['sim-order-correct'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet travels across the link to the firewall for policy evaluation.',
+        interviewTakeaway: 'Packet ingress triggers sequential top-down rule inspection.'
+      },
+      {
+        id: 4,
+        label: 'Order A: Rule #1 Matches First (ALLOW ✓)',
+        badge: 'Permitted ✓',
         activeNodes: ['sim-order-correct'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP' },
         activeRuleIndex: 0,
         decision: 'ALLOW',
         ruleMatched: 'Rule 1: ALLOW 10.0.0.25 -> 192.168.1.5:443',
-        whatIsHappening: 'Packet matches Rule 1 immediately. Result: ALLOWED. Legitimate admin access is granted.',
-        interviewTakeaway: 'Specific exceptions placed at the top take precedence as intended.'
+        whatIsHappening: 'Packet matches specific Rule 1 immediately. Forwarded to destination server. Admin access granted!',
+        interviewTakeaway: 'Specific exception triggers on first match; lower deny rule is safely bypassed.'
       },
       {
-        id: 2,
-        label: 'Order B: Broad Rule Dragged to Top',
-        badge: 'Reordered',
+        id: 5,
+        label: 'Order B: Broad Rule Dragged Above Specific Rule',
+        badge: 'Order B (Flawed)',
+        activeNodes: ['sim-order-swapped'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Reordered rulebase: Rule 1: `DENY ANY -> 192.168.1.5:443`; Rule 2: `ALLOW 10.0.0.25 -> 192.168.1.5:443`.',
+        interviewTakeaway: 'Placing broad rules on top creates dangerous rule shadowing.'
+      },
+      {
+        id: 6,
+        label: 'Order B: Same Packet Transits to Firewall',
+        badge: 'In Transit',
+        activeNodes: ['sim-order-swapped'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'The identical packet (10.0.0.25:443) arrives at the reordered firewall.',
+        interviewTakeaway: 'Evaluating the exact same packet header against the inverted policy.'
+      },
+      {
+        id: 7,
+        label: 'Order B: Broad Rule #1 Matches First (DENIED ✕)',
+        badge: 'Blocked ✕',
         activeNodes: ['sim-order-swapped'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.5', dstPort: 443, protocol: 'TCP' },
         activeRuleIndex: 0,
         decision: 'DENY',
         ruleMatched: 'Rule 1 (Swapped): DENY ANY -> 192.168.1.5:443',
-        whatIsHappening: 'Same packet arrives, but now matches the broad DENY rule first. Result: DENIED! Specific rule is never reached.',
-        interviewTakeaway: 'Reordering rules completely inverts the security decision for the exact same packet.'
+        whatIsHappening: 'Rule 1 matches ANY source and DROPS the packet. Legitimate admin is locked out!',
+        interviewTakeaway: 'First matching rule terminates evaluation. Lower rules cannot override the match.'
+      },
+      {
+        id: 8,
+        label: 'Rule Shadowing Proven: Specific Rule #2 is Dead',
+        badge: 'Rule Shadowed',
+        activeNodes: ['sim-order-swapped'],
+        decision: 'DENY',
+        whatIsHappening: 'Rule 2 (ALLOW 10.0.0.25) is completely unreachable and shadowed. Result: Rule Order Matters Critically!',
+        interviewTakeaway: 'Always sequence firewall policies strictly from most specific to least specific.'
       }
     ]
   },
@@ -1147,33 +1244,81 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Unknown Packet Arrives',
-        badge: 'Ingress',
+        label: 'Network Topology Initialized (Client Only)',
+        badge: 'Client Origin',
         activeNodes: ['client'],
         packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'Packet on unknown port 8443 arrives at firewall perimeter.',
-        interviewTakeaway: 'Traffic arrives that does not match standard public service profiles.'
+        whatIsHappening: 'An external client initiates a connection on unknown TCP port 8443.',
+        interviewTakeaway: 'Traffic arrives on a port that is not part of standard permitted services.'
       },
       {
         id: 2,
-        label: 'Rule 1 & Rule 2 Check: NO MATCH',
-        badge: 'Scanning',
-        activeNodes: ['firewall-scan'],
-        activeRuleIndex: 0,
-        decision: 'INSPECT',
-        whatIsHappening: 'Firewall checks Rule 1 (Port 80) - NO MATCH. Checks Rule 2 (Port 443) - NO MATCH.',
-        interviewTakeaway: 'Packet traverses down the rulebase without finding any matching permit statement.'
+        label: 'Firewall Gateway Online with Standard Web ACL',
+        badge: 'Web Rules Loaded',
+        activeNodes: ['client', 'firewall-scan'],
+        packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP' },
+        whatIsHappening: 'Firewall policy contains explicit rules: Rule 1 (HTTP :80) and Rule 2 (HTTPS :443).',
+        interviewTakeaway: 'The rulebase defines explicit permit statements for standard web traffic.'
       },
       {
         id: 3,
-        label: 'Hits Implicit Deny: DROPPED',
-        badge: 'Implicit Deny',
+        label: 'Target Internal Server Connected',
+        badge: 'Target Server',
+        activeNodes: ['client', 'firewall-scan', 'server'],
+        packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP' },
+        whatIsHappening: 'Internal Web Server (10.0.1.20) is connected behind the firewall perimeter.',
+        interviewTakeaway: 'Firewall shields internal resources from unauthorized port access.'
+      },
+      {
+        id: 4,
+        label: 'Unknown Port 8443 Packet Transits to Firewall',
+        badge: 'In Transit',
+        activeNodes: ['client', 'firewall-scan'],
+        packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet on port 8443 reaches the firewall ingress buffer for policy evaluation.',
+        interviewTakeaway: 'Firewall buffers the frame and extracts the 5-tuple header.'
+      },
+      {
+        id: 5,
+        label: 'Rule 1 Evaluation (HTTP :80) — NO MATCH ✕',
+        badge: 'Rule 1 Failed',
+        activeNodes: ['firewall-scan'],
+        packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP' },
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall tests Rule 1 (Port 80). Match fails because incoming port is 8443.',
+        interviewTakeaway: 'Evaluation proceeds to the next rule in sequence.'
+      },
+      {
+        id: 6,
+        label: 'Rule 2 Evaluation (HTTPS :443) — NO MATCH ✕',
+        badge: 'Rule 2 Failed',
+        activeNodes: ['firewall-scan'],
+        packetInfo: { srcIp: '198.51.100.77', dstIp: '10.0.1.20', dstPort: 8443, protocol: 'TCP' },
+        activeRuleIndex: 1,
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall tests Rule 2 (Port 443). Match fails because incoming port is 8443.',
+        interviewTakeaway: 'All explicit permit rules have been exhausted without finding a match.'
+      },
+      {
+        id: 7,
+        label: 'End of Rulebase: IMPLICIT DENY Activates',
+        badge: 'Implicit Deny Triggered',
         activeNodes: ['firewall-drop'],
-        activeRuleIndex: 3,
+        activeRuleIndex: 2,
         decision: 'DROP',
         ruleMatched: 'Default Rule: IMPLICIT DENY ALL',
-        whatIsHappening: 'Packet reaches end of rulebase. Implicit deny drops the packet silently.',
-        interviewTakeaway: 'Default Deny guarantees that forgotten or unspecified ports remain secure.'
+        whatIsHappening: 'Packet falls off the end of the rule list. The default Implicit Deny rule triggers a DROP action.',
+        interviewTakeaway: 'Default Deny guarantees that unspecified ports remain closed by default.'
+      },
+      {
+        id: 8,
+        label: 'Packet Visibly Halted & Blocked at Firewall (Server Safe)',
+        badge: '✕ BLOCKED AT FW',
+        activeNodes: ['firewall-drop'],
+        decision: 'DROP',
+        whatIsHappening: 'Packet is visibly stopped and discarded at the firewall boundary. Server receives zero unauthorized traffic.',
+        interviewTakeaway: 'Zero Trust architecture enforces strict Default Deny protection.'
       }
     ]
   },
@@ -1224,39 +1369,93 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Packet Test Case 1: 10.0.0.25 on Port 443',
-        badge: 'Case 1',
+        label: 'Case 1 Ingress: Candidate Packet Created (10.0.0.25 on :443)',
+        badge: 'Case 1: 10.0.0.25',
+        activeNodes: ['sim-client-1'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet 1 arrives with Source: 10.0.0.25 and Destination Port: 443.',
+        interviewTakeaway: 'Evaluate against Rule 1 first: 10.0.0.25 falls inside 10.0.0.0/24 subnet.'
+      },
+      {
+        id: 2,
+        label: 'Case 1 Transits to Firewall',
+        badge: 'Case 1 Transit',
+        activeNodes: ['sim-client-1'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Packet 1 travels to firewall ingress buffer.',
+        interviewTakeaway: 'Headers are extracted and matched against the rulebase.'
+      },
+      {
+        id: 3,
+        label: 'Case 1 Evaluated: Rule 1 Matched (ALLOWED ✓)',
+        badge: 'Case 1 Allowed ✓',
         activeNodes: ['sim-client-1'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP' },
         activeRuleIndex: 0,
         decision: 'ALLOW',
         ruleMatched: 'Rule 1: ALLOW 10.0.0.0/24 -> Server:443',
-        whatIsHappening: '10.0.0.25 is inside 10.0.0.0/24. Matches Rule 1. Result: ALLOWED ✓.',
-        interviewTakeaway: 'Matches Rule 1 first, so processing terminates with ALLOW.'
+        whatIsHappening: 'Matches Rule 1 immediately. Forwarded to Server. Case 1 Result: ALLOWED ✓.',
+        interviewTakeaway: 'First match terminates evaluation with ALLOW.'
       },
       {
-        id: 2,
-        label: 'Packet Test Case 2: 10.0.1.50 on Port 443',
-        badge: 'Case 2',
+        id: 4,
+        label: 'Case 2 Ingress: Candidate Packet Created (10.0.1.50 on :443)',
+        badge: 'Case 2: 10.0.1.50',
+        activeNodes: ['sim-client-2'],
+        packetInfo: { srcIp: '10.0.1.50', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet 2 arrives with Source: 10.0.1.50 and Destination Port: 443.',
+        interviewTakeaway: 'Notice that 10.0.1.50 does NOT belong to 10.0.0.0/24 subnet.'
+      },
+      {
+        id: 5,
+        label: 'Case 2 Transits to Firewall',
+        badge: 'Case 2 Transit',
+        activeNodes: ['sim-client-2'],
+        packetInfo: { srcIp: '10.0.1.50', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Packet 2 reaches firewall for sequential rule inspection.',
+        interviewTakeaway: 'Firewall compares headers against Rule 1 then Rule 2.'
+      },
+      {
+        id: 6,
+        label: 'Case 2 Evaluated: Rule 2 Matched (DENIED ✕)',
+        badge: 'Case 2 Denied ✕',
         activeNodes: ['sim-client-2'],
         packetInfo: { srcIp: '10.0.1.50', dstIp: '192.168.1.100', dstPort: 443, protocol: 'TCP' },
         activeRuleIndex: 1,
         decision: 'DENY',
         ruleMatched: 'Rule 2: DENY ANY -> Server:443',
-        whatIsHappening: '10.0.1.50 fails Rule 1, matches Rule 2 (DENY ANY on 443). Result: DENIED ✕.',
-        interviewTakeaway: 'Fails Rule 1 subnet check; caught by broad Rule 2 deny.'
+        whatIsHappening: 'Fails Rule 1 subnet check; matches Rule 2 (DENY ANY on 443). Case 2 Result: DENIED ✕.',
+        interviewTakeaway: 'Broad deny rule at Rule 2 catches and drops the traffic.'
       },
       {
-        id: 3,
-        label: 'Packet Test Case 3: 172.16.5.9 on Port 80',
-        badge: 'Case 3',
+        id: 7,
+        label: 'Case 3 Ingress: Candidate Packet Created (172.16.5.9 on :80)',
+        badge: 'Case 3: Port 80',
+        activeNodes: ['sim-client-3'],
+        packetInfo: { srcIp: '172.16.5.9', dstIp: '192.168.1.100', dstPort: 80, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet 3 arrives on HTTP port 80 from source 172.16.5.9.',
+        interviewTakeaway: 'Port 80 traffic bypasses port 443 rules and moves to Rule 3.'
+      },
+      {
+        id: 8,
+        label: 'Case 3 Transits to Firewall',
+        badge: 'Case 3 Transit',
+        activeNodes: ['sim-client-3'],
+        packetInfo: { srcIp: '172.16.5.9', dstIp: '192.168.1.100', dstPort: 80, protocol: 'TCP' },
+        whatIsHappening: 'Packet 3 reaches firewall and begins top-down rule evaluation.',
+        interviewTakeaway: 'Rules 1 and 2 check for port 443 and fail.'
+      },
+      {
+        id: 9,
+        label: 'Case 3 Evaluated: Rule 3 Matched (ALLOWED ✓)',
+        badge: 'Case 3 Allowed ✓',
         activeNodes: ['sim-client-3'],
         packetInfo: { srcIp: '172.16.5.9', dstIp: '192.168.1.100', dstPort: 80, protocol: 'TCP' },
         activeRuleIndex: 2,
         decision: 'ALLOW',
         ruleMatched: 'Rule 3: ALLOW ANY -> Server:80',
-        whatIsHappening: 'Port is 80 (fails Rules 1 & 2), matches Rule 3 (ALLOW ANY on 80). Result: ALLOWED ✓.',
-        interviewTakeaway: 'Port 80 traffic bypasses port 443 rules and matches Rule 3.'
+        whatIsHappening: 'Matches Rule 3 (ALLOW ANY on 80). Forwarded to Server. Case 3 Result: ALLOWED ✓.',
+        interviewTakeaway: 'Deterministic evaluation correctly categorizes all 3 whiteboard test cases.'
       }
     ]
   },
@@ -1736,41 +1935,83 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: '1. Inbound Ingress on External Interface',
-        badge: 'Ingress',
-        activeNodes: ['order-ingress'],
-        packetInfo: { srcIp: '198.51.100.4', dstIp: '203.0.113.10', dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Public packet arrives destined for public IP 203.0.113.10 on port 443.',
-        interviewTakeaway: 'The packet carries original public source and public destination addresses.'
+        label: '1. Outbound: Client Creates Packet (192.168.1.10)',
+        badge: 'Outbound Step 1',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '203.0.113.50', srcPort: 49152, dstPort: 80, protocol: 'TCP' },
+        whatIsHappening: 'Internal host 192.168.1.10 prepares an outbound HTTP request destined for public web server 203.0.113.50.',
+        interviewTakeaway: 'The packet originates with its private RFC 1918 inside local source IP.'
       },
       {
         id: 2,
-        label: '2. Pre-Routing Destination NAT (DNAT)',
-        badge: 'DNAT Phase',
-        activeNodes: ['order-dnat'],
-        packetInfo: { srcIp: '198.51.100.4', dstIp: '10.0.2.50', dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'DNAT translates destination IP from 203.0.113.10 -> internal real IP 10.0.2.50.',
-        interviewTakeaway: 'Destination translation occurs before security policy forwarding evaluation.'
+        label: '2. Outbound: Firewall ACL Checks Original Private IP',
+        badge: 'Outbound Step 2',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '203.0.113.50', srcPort: 49152, dstPort: 80, protocol: 'TCP' },
+        decision: 'ALLOW',
+        ruleMatched: 'Rule: ALLOW Inside_LAN (192.168.1.0/24) -> Internet (Port 80)',
+        whatIsHappening: 'Firewall evaluates outbound security policy on the original private IP address before any NAT occurs.',
+        interviewTakeaway: 'For outbound traffic, firewall security rules inspect the original un-NATted private IP address.'
       },
       {
         id: 3,
-        label: '3. Firewall Security Policy Check',
-        badge: 'ACL Filter',
-        activeNodes: ['order-firewall'],
-        decision: 'ALLOW',
-        ruleMatched: 'Rule: ALLOW Ext_Zone -> DMZ_Zone (10.0.2.50:443)',
-        whatIsHappening: 'Firewall evaluates access policy to verify if traffic from untrusted zone is authorized to reach DMZ web server.',
-        interviewTakeaway: 'Security policy evaluates routing zone and destination parameters.'
+        label: '3. Outbound: Post-Routing NAT Rewrites Source IP',
+        badge: 'Outbound Step 3',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '203.0.113.50', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Post-routing NAT translates source IP 192.168.1.10 to public interface IP 203.0.113.10:52100.',
+        interviewTakeaway: 'Source NAT (SNAT/PAT) occurs after routing and security checks as the packet leaves the egress interface.'
       },
       {
         id: 4,
-        label: '4. Egress to Internal DMZ Server',
-        badge: 'Delivery',
-        activeNodes: ['order-egress'],
+        label: '4. Outbound: Packet Egresses to Internet',
+        badge: 'Outbound Step 4',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '203.0.113.50', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Translated packet transits the WAN link and reaches remote web server. Outbound flow complete!',
+        interviewTakeaway: 'Summary of Outbound: Ingress -> Route -> Firewall ACL (Private IP) -> SNAT -> Egress WAN.'
+      },
+      {
+        id: 5,
+        label: '5. Inbound DNAT: Public Request Hits Firewall (203.0.113.10:443)',
+        badge: 'Inbound Step 1',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '198.51.100.4', dstIp: '203.0.113.10', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'External client 198.51.100.4 sends HTTPS request targeting public VIP 203.0.113.10 on port 443.',
+        interviewTakeaway: 'Incoming packet arrives at external ingress interface carrying public destination IP.'
+      },
+      {
+        id: 6,
+        label: '6. Inbound DNAT: Pre-Routing Rewrites Destination to 10.0.2.50',
+        badge: 'Inbound Step 2',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '198.51.100.4', dstIp: '10.0.2.50', dstPort: 443, protocol: 'TCP' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Pre-routing DNAT translates destination IP from public 203.0.113.10 to internal server 10.0.2.50.',
+        interviewTakeaway: 'Destination translation occurs in PREROUTING before the security filter forwarding engine.'
+      },
+      {
+        id: 7,
+        label: '7. Inbound DNAT: Firewall Policy Evaluates Translated IP',
+        badge: 'Inbound Step 3',
+        activeNodes: ['firewall'],
         packetInfo: { srcIp: '198.51.100.4', dstIp: '10.0.2.50', dstPort: 443, protocol: 'TCP' },
         decision: 'ALLOW',
-        whatIsHappening: 'Packet is switched out the DMZ interface and delivered to internal server 10.0.2.50.',
-        interviewTakeaway: 'Packet successfully arrives with real internal destination IP.'
+        ruleMatched: 'Rule: ALLOW Untrust -> DMZ_Host (10.0.2.50:443)',
+        whatIsHappening: 'Firewall security policy checks if external traffic is allowed to access internal DMZ server 10.0.2.50:443.',
+        interviewTakeaway: 'In Cisco ASA & iptables, security rules evaluate the translated real internal IP address.'
+      },
+      {
+        id: 8,
+        label: '8. Inbound DNAT: Packet Delivered to Internal DMZ Web Server',
+        badge: 'Inbound Step 4',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '198.51.100.4', dstIp: '10.0.2.50', dstPort: 443, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Packet traverses DMZ interface and delivers to internal server 10.0.2.50. Full bidirectional lifecycle verified!',
+        interviewTakeaway: 'Summary of Inbound DNAT: Ingress -> Pre-Routing DNAT -> Route -> Firewall ACL (Real IP) -> Egress DMZ.'
       }
     ]
   },
@@ -1946,27 +2187,70 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Perimeter Sensor (Behind Firewall)',
-        badge: 'North-South',
-        activeNodes: ['place-perimeter'],
-        whatIsHappening: 'Inspects North-South traffic that has successfully traversed firewall ACLs. Filters out web application exploits and C2 callbacks.',
-        interviewTakeaway: 'Primary defense line against external exploitation attempts.'
+        label: '1. Architecture Baseline: 4 Core Inspection Zones Established',
+        badge: 'Placement 1: Topology',
+        activeNodes: ['place-perimeter', 'place-dmz', 'place-core'],
+        packetInfo: { srcIp: 'WAN', dstIp: '10.0.3.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Network establishes 4 sensor vantage points: Perimeter Edge, Behind Firewall, DMZ Buffer, and Core Internal Switch.',
+        interviewTakeaway: 'Sensor placement determines detection visibility, processing capacity, and false-positive overhead.'
       },
       {
         id: 2,
-        label: 'DMZ Sensor (Public Services)',
-        badge: 'DMZ Layer',
-        activeNodes: ['place-dmz'],
-        whatIsHappening: 'Monitors traffic entering and leaving DMZ servers. Detects webshell uploads and database exfiltration attempts.',
-        interviewTakeaway: 'Guards the perimeter-to-internal pivot point.'
+        label: '2. Normal Clean Traffic Flows Behind Perimeter Firewall',
+        badge: 'Placement 2: Clean Traffic',
+        activeNodes: ['place-perimeter'],
+        packetInfo: { srcIp: '198.51.100.15', dstIp: '10.0.3.50', dstPort: 443, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Legitimate HTTPS user traffic passes perimeter firewall and traverses the inline IPS sensor with zero latency overhead.',
+        interviewTakeaway: 'Placing IPS behind the firewall avoids wasting sensor CPU cycles on internet port scans dropped by firewall ACLs.'
       },
       {
         id: 3,
-        label: 'Core / Internal Sensor (East-West)',
-        badge: 'East-West',
-        activeNodes: ['place-core'],
-        whatIsHappening: 'Monitors inter-VLAN internal network traffic. Detects lateral movement (SMB/RDP brute force, ransomware replication).',
-        interviewTakeaway: 'Crucial for defense-in-depth against insider threats and post-exploitation spread.'
+        label: '3. Threat Ingress: External Attacker Transmits Malicious Payload',
+        badge: 'Placement 3: Exploit Ingress',
+        activeNodes: ['place-perimeter'],
+        packetInfo: { srcIp: '198.51.100.99', dstIp: '10.0.3.50', dstPort: 443, protocol: 'TCP', payloadSummary: 'CVE-2021-44228 Log4j JNDI RCE Exploit' },
+        whatIsHappening: 'An external attacker transmits a malicious exploit payload (e.g. Log4j RCE) over open port 443 targeting internal servers.',
+        interviewTakeaway: 'Because port 443 is permitted in firewall ACLs, traditional firewalls blindly allow the malicious packet through.'
+      },
+      {
+        id: 4,
+        label: '4. Exploit Passes Firewall & Reaches Inline IPS Sensor',
+        badge: 'Placement 4: Sensor Ingress',
+        activeNodes: ['place-perimeter'],
+        packetInfo: { srcIp: '198.51.100.99', dstIp: '10.0.3.50', dstPort: 443, protocol: 'TCP', payloadSummary: 'CVE-2021-44228 Log4j JNDI RCE Exploit' },
+        decision: 'INSPECT',
+        whatIsHappening: 'The exploit packet enters the inline IPS sensor positioned directly behind the firewall for Deep Packet Inspection (DPI).',
+        interviewTakeaway: 'The inline IPS performs protocol decoding, regex stream reassembly, and vulnerability signature matching.'
+      },
+      {
+        id: 5,
+        label: '5. IPS Signature Match: Real-Time Stream Threat Identified',
+        badge: 'Placement 5: Signature Match',
+        activeNodes: ['place-perimeter'],
+        decision: 'INSPECT',
+        ruleMatched: 'IPS Signature SID: 2034324 (EXPLOIT Apache Log4j RCE)',
+        whatIsHappening: 'The IPS signature engine detects known exploit byte sequences in the TCP stream and triggers an immediate blocking action.',
+        interviewTakeaway: 'Inline deployment allows the sensor to intervene and terminate the TCP stream in real-time before delivery.'
+      },
+      {
+        id: 6,
+        label: '6. Action Executed: Packet DROPPED & Attacker TCP Reset',
+        badge: 'Placement 6: BLOCKED ✕',
+        activeNodes: ['place-perimeter'],
+        decision: 'DROP',
+        ruleMatched: 'IPS Action: INLINE DROP + TCP RST',
+        whatIsHappening: 'The IPS immediately drops the malicious frame and transmits TCP RST packets to tear down the attacker session.',
+        interviewTakeaway: 'Target internal server receives zero exploit bytes and remains completely protected.'
+      },
+      {
+        id: 7,
+        label: '7. East-West & DMZ Placement Strategy Summary',
+        badge: 'Placement 7: Defense-in-Depth',
+        activeNodes: ['place-dmz', 'place-core'],
+        decision: 'ALLOW',
+        whatIsHappening: 'Full placement architecture verified: Perimeter (North-South), DMZ (Public Web), and Core Switch SPAN (East-West Lateral Movement).',
+        interviewTakeaway: 'Combining perimeter inline IPS with internal TAP/SPAN sensors provides holistic Defense-in-Depth.'
       }
     ]
   },
@@ -2022,40 +2306,82 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: '1. Incident Reported: Connection Failing',
+        label: '1. Incident Reported: Connection Failing (10.0.0.25 -> Server:22)',
         badge: 'Step 1: Symptom',
         activeNodes: ['triage-client'],
-        packetInfo: { srcIp: '10.0.1.50', dstIp: '172.16.5.10', dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'Application team reports database API calls are timing out. 5-tuple details collected.',
-        interviewTakeaway: 'Always gather precise 5-tuple and timestamp before investigating.'
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 22, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Operations team reports SSH administrative connection to production server is failing and timing out.',
+        interviewTakeaway: 'Always gather precise 5-tuple (Src/Dst IP, Src/Dst Port, Protocol) and exact timestamps first.'
       },
       {
         id: 2,
-        label: '2. Firewall Log Analysis',
-        badge: 'Step 2: Logs',
-        activeNodes: ['triage-logs'],
+        label: '2. Firewall Drop: Traffic Intercepted and Blocked at Ingress',
+        badge: 'Step 2: Drop Event',
+        activeNodes: ['triage-client', 'triage-server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 22, protocol: 'TCP' },
         decision: 'DROP',
-        ruleMatched: 'Syslog: %ASA-4-106023: Deny tcp src inside:10.0.1.50/51200 dst dmz:172.16.5.10/443 by access-group "INSIDE_IN"',
-        whatIsHappening: 'Syslog query confirms firewall is actively dropping packets at Rule 40 (Explicit Deny).',
-        interviewTakeaway: 'Log telemetry confirms whether drops are firewall-driven or host-side.'
+        whatIsHappening: 'Firewall receives SSH SYN packet on ingress interface and halts forwarding. Server receives zero packets.',
+        interviewTakeaway: 'Dual-interface capture proves packet is dropped inside the security appliance, not on transit links.'
       },
       {
         id: 3,
-        label: '3. Live PCAP Packet Capture',
-        badge: 'Step 3: PCAP',
-        activeNodes: ['triage-pcap'],
-        whatIsHappening: 'Ingress interface captures TCP SYN; egress interface captures nothing. Confirms drop occurs inside firewall engine.',
-        interviewTakeaway: 'Dual-interface PCAP proves packet loss location conclusively.'
+        label: '3. Syslog Event Generated: Real-Time Telemetry Logged',
+        badge: 'Step 3: Syslog Stream',
+        activeNodes: ['triage-logs'],
+        decision: 'DROP',
+        ruleMatched: 'Syslog: [14:22:01] ACTION=DENY SRC=10.0.0.25 DST=203.0.113.50 PROTO=TCP PORT=22 RULE_ID=104',
+        whatIsHappening: 'Firewall syslog stream emits an event confirming active packet drop with complete 5-tuple metadata.',
+        interviewTakeaway: 'Log telemetry provides immediate confirmation of whether drops are intentional policy drops or drops due to errors.'
       },
       {
         id: 4,
-        label: '4. Rule Adjustment & Verification',
-        badge: 'Step 4: Resolved',
+        label: '4. Source IP Isolation: Validating Client Address (10.0.0.25)',
+        badge: 'Step 4: Source IP',
+        activeNodes: ['triage-logs'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 22, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Engineer isolates Source IP `10.0.0.25` to verify if client workstation belongs to authorized management subnet.',
+        interviewTakeaway: 'Check if DHCP changes, VPN address reassignment, or subnet migration changed client source identity.'
+      },
+      {
+        id: 5,
+        label: '5. Destination IP & Target Service Verification (203.0.113.50)',
+        badge: 'Step 5: Target Host',
+        activeNodes: ['triage-logs'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 22, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Engineer verifies Destination IP `203.0.113.50` routing zone and DMZ security policies.',
+        interviewTakeaway: 'Verify that destination IP matches the intended production service and is not an outdated IP.'
+      },
+      {
+        id: 6,
+        label: '6. Protocol & Port Identification: TCP Port 22 (SSH)',
+        badge: 'Step 6: Port 22 SSH',
+        activeNodes: ['triage-logs'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 22, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Log confirms traffic is TCP port 22 (SSH). Security policy restricts management protocols to bastion jump-hosts.',
+        interviewTakeaway: 'Security best practices mandate restricting management ports (SSH/RDP) to dedicated jump hosts.'
+      },
+      {
+        id: 7,
+        label: '7. Policy Table Trace: Correlating Matched Rule #104',
+        badge: 'Step 7: Rule Match',
+        activeNodes: ['triage-logs'],
+        decision: 'DROP',
+        ruleMatched: 'Rule #104: DENY TCP ANY -> Server:22 (SSH Restriction)',
+        whatIsHappening: 'Firewall rule inspection confirms Rule #104 explicitly blocks SSH from general user subnets.',
+        interviewTakeaway: 'Trace exact rule index to distinguish between explicit ACL deny and default implicit deny.'
+      },
+      {
+        id: 8,
+        label: '8. Root Cause Remediation & Diagnostic Resolution',
+        badge: 'Step 8: Root Cause ✓',
         activeNodes: ['triage-client', 'triage-server'],
         decision: 'ALLOW',
-        ruleMatched: 'Rule 35: ALLOW 10.0.1.50 -> 172.16.5.10:443',
-        whatIsHappening: 'Permit rule inserted above deny rule. Packets flow successfully; TCP handshake completes.',
-        interviewTakeaway: 'Systematic root-cause remediation restores connectivity safely.'
+        ruleMatched: 'Resolution: Route through Bastion Host or add Authorized Admin Exception',
+        whatIsHappening: 'Triage complete! Client must connect via Bastion Jump-Host or administrator submits change ticket to permit IP.',
+        interviewTakeaway: '5-step troubleshooting lifecycle: Symptom -> Drop Confirmation -> Log 5-Tuple -> Rule Correlation -> Root Cause Fix.'
       }
     ]
   },
@@ -2316,30 +2642,82 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Original IP Packet Header',
-        badge: 'Unencrypted',
+        label: '1. Site A: Original Plaintext IP Packet Created (10.1.0.10)',
+        badge: 'Step 1: Plaintext',
         activeNodes: ['ipsec-orig'],
-        packetInfo: { srcIp: '10.0.1.10', dstIp: '10.0.2.20', dstPort: 80, protocol: 'TCP', payloadSummary: 'Confidential ERP Financial Data' },
-        whatIsHappening: 'Internal host transmits plaintext packet destined for remote branch office.',
-        interviewTakeaway: 'The original packet carries private internal IP addressing and unencrypted payload.'
+        packetInfo: { srcIp: '10.1.0.10', dstIp: '10.2.0.50', dstPort: 443, protocol: 'TCP', payloadSummary: 'Confidential ERP Financial Data' },
+        whatIsHappening: 'Internal host 10.1.0.10 at Site A initiates communication destined for private server 10.2.0.50 at Site B.',
+        interviewTakeaway: 'The packet carries RFC 1918 private IP headers that cannot be routed over the public Internet.'
       },
       {
         id: 2,
-        label: 'IPsec Tunnel Mode Encapsulation',
-        badge: 'ESP Wrapped',
+        label: '2. Site A IPsec Gateway: Crypto ACL & Security Association Match',
+        badge: 'Step 2: SA Match',
         activeNodes: ['ipsec-encap'],
-        packetInfo: { srcIp: '203.0.113.1', dstIp: '198.51.100.2', protocol: 'ESP', isEncrypted: true, payloadSummary: '[New IP Header] + [ESP Header] + [Encrypted Original Packet] + [ESP Auth]' },
-        whatIsHappening: 'Gateway encrypts original packet with AES-256, appends ESP header/trailer, and attaches a new public IP header.',
-        interviewTakeaway: 'Original IP header and payload are hidden inside the encrypted ESP payload.'
+        packetInfo: { srcIp: '10.1.0.10', dstIp: '10.2.0.50', dstPort: 443, protocol: 'TCP' },
+        decision: 'INSPECT',
+        ruleMatched: 'Crypto Map: Match ACL_SITE_A_TO_B -> Transform-Set ESP-AES256-SHA256',
+        whatIsHappening: 'Gateway router intercepts traffic, matches interesting traffic ACL, and retrieves negotiated IPsec SA parameters.',
+        interviewTakeaway: 'Interesting traffic matching initiates the IPsec cryptographic encapsulation engine.'
       },
       {
         id: 3,
-        label: 'Decapsulation at Remote Gateway',
-        badge: 'Decrypted',
+        label: '3. AES-256-GCM Encryption: Plaintext Transformed to Ciphertext',
+        badge: 'Step 3: Encrypted',
+        activeNodes: ['ipsec-encap'],
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '198.51.100.1', protocol: 'ESP', isEncrypted: true, payloadSummary: '🔒 [Encrypted Original Header + ERP Payload]' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Original IP header and payload are encrypted using AES-256 symmetric cipher. ESP header and Auth tag are appended.',
+        interviewTakeaway: 'ESP (IP Protocol 50) delivers Confidentiality and HMAC Integrity simultaneously.'
+      },
+      {
+        id: 4,
+        label: '4. IPsec Tunnel Mode: New Public IP Header Attached (203.0.113.1)',
+        badge: 'Step 4: Tunnel Wrapped',
+        activeNodes: ['ipsec-encap'],
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '198.51.100.1', protocol: 'ESP', isEncrypted: true },
+        whatIsHappening: 'Gateway wraps the encrypted ESP payload inside a brand new public IP header (Src: 203.0.113.1, Dst: 198.51.100.1).',
+        interviewTakeaway: 'Tunnel Mode hides the entire internal topology from internet snooping and traffic analysis.'
+      },
+      {
+        id: 5,
+        label: '5. WAN Transit: Ciphertext Traverses Untrusted Internet Tunnel',
+        badge: 'Step 5: WAN Transit',
+        activeNodes: ['ipsec-encap'],
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '198.51.100.1', protocol: 'ESP', isEncrypted: true },
+        whatIsHappening: 'The encrypted ESP packet travels across the public WAN. Eavesdroppers only see unintelligible encrypted ciphertext.',
+        interviewTakeaway: 'Anti-replay sequence numbers protect the flow against packet replay attacks.'
+      },
+      {
+        id: 6,
+        label: '6. Site B Gateway Ingress: ESP Packet Received',
+        badge: 'Step 6: Ingress GW B',
         activeNodes: ['ipsec-decap'],
-        packetInfo: { srcIp: '10.0.1.10', dstIp: '10.0.2.20', dstPort: 80, protocol: 'TCP', payloadSummary: 'Confidential ERP Financial Data' },
-        whatIsHappening: 'Remote gateway validates HMAC integrity, strips ESP wrapper, decrypts payload, and delivers original packet to destination.',
-        interviewTakeaway: 'Integrity verified and data delivered securely.'
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '198.51.100.1', protocol: 'ESP', isEncrypted: true },
+        decision: 'INSPECT',
+        whatIsHappening: 'Remote Site B Gateway receives the ESP packet on its WAN interface and validates the SPI (Security Parameter Index).',
+        interviewTakeaway: 'The SPI in the ESP header tells the receiving router which decryption key to load.'
+      },
+      {
+        id: 7,
+        label: '7. Decryption & Integrity Verification: HMAC SHA-256 Validated',
+        badge: 'Step 7: Decrypted ✓',
+        activeNodes: ['ipsec-decap'],
+        packetInfo: { srcIp: '10.1.0.10', dstIp: '10.2.0.50', dstPort: 443, protocol: 'TCP' },
+        decision: 'ALLOW',
+        ruleMatched: 'HMAC SHA-256 Check: Passed ✓ | SPI Validated',
+        whatIsHappening: 'Site B gateway verifies ICV checksum, strips outer IP and ESP headers, and decrypts the original packet.',
+        interviewTakeaway: 'Integrity verification ensures the payload was not tampered with in transit.'
+      },
+      {
+        id: 8,
+        label: '8. Original Plaintext Delivered to Site B Server (10.2.0.50)',
+        badge: 'Step 8: Delivered ✓',
+        activeNodes: ['ipsec-decap'],
+        packetInfo: { srcIp: '10.1.0.10', dstIp: '10.2.0.50', dstPort: 443, protocol: 'TCP', payloadSummary: 'Confidential ERP Financial Data' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Original plaintext packet is switched onto the Site B local subnet and delivered to server 10.2.0.50.',
+        interviewTakeaway: 'End-to-end IPsec lifecycle: Plaintext -> SA Match -> Encrypt -> Tunnel Transit -> Decrypt -> Delivered.'
       }
     ]
   },
@@ -2394,39 +2772,78 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: '1. Client Hello + Key Share',
-        badge: 'ClientHello',
+        label: '1. TCP Handshake Complete & TLS 1.3 Session Initiated',
+        badge: 'Step 1: Ingress',
         activeNodes: ['tls-client', 'tls-server'],
-        packetInfo: { srcIp: 'Client', dstIp: 'Server', dstPort: 443, protocol: 'TLS', payloadSummary: 'TLS 1.3, Supported Ciphers, ECDHE Key Share (Client Public Key)' },
-        whatIsHappening: 'Client sends TLS version, supported cipher suites, random nonce, and its ephemeral Diffie-Hellman public key share.',
-        interviewTakeaway: 'TLS 1.3 combines key exchange guessing in Step 1, cutting handshake latency in half (1-RTT).'
+        packetInfo: { srcIp: '192.168.1.100', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP', flags: 'ESTABLISHED' },
+        whatIsHappening: 'Underlying TCP 3-way handshake is established on port 443. Client prepares to initiate cryptographic security negotiation.',
+        interviewTakeaway: 'TLS operates on top of Layer 4 TCP transport to encrypt upper-layer application streams.'
       },
       {
         id: 2,
-        label: '2. Server Hello + Certificate + Key Share',
-        badge: 'ServerHello',
-        activeNodes: ['tls-server', 'tls-client'],
-        packetInfo: { srcIp: 'Server', dstIp: 'Client', dstPort: 443, protocol: 'TLS', payloadSummary: 'Server Key Share, X.509 CA Certificate, Encrypted Extensions' },
-        whatIsHappening: 'Server selects cipher suite (e.g., TLS_AES_256_GCM_SHA384), sends its public key share and digital certificate.',
-        interviewTakeaway: 'Client verifies the server certificate against trusted root Certificate Authorities (CAs).'
+        label: '2. ClientHello + Ephemeral KeyShare (ECDHE Public Key)',
+        badge: 'Step 2: ClientHello',
+        activeNodes: ['tls-client', 'tls-server'],
+        packetInfo: { srcIp: 'Client', dstIp: 'Server', dstPort: 443, protocol: 'TLS', payloadSummary: 'TLS 1.3, Supported Ciphers, Client ECDHE KeyShare, Nonce' },
+        whatIsHappening: 'Client sends supported cipher suites, random nonce, and its ephemeral Diffie-Hellman public key share.',
+        interviewTakeaway: 'TLS 1.3 embeds the client key share in Step 1, cutting handshake latency down to 1-RTT.'
       },
       {
         id: 3,
-        label: '3. Shared Symmetric Key Computed',
-        badge: 'Key Derivation',
-        activeNodes: ['tls-client', 'tls-server'],
-        whatIsHappening: 'Both client and server use Diffie-Hellman math to compute the exact same Master Secret Key independently without ever transmitting it over the wire.',
-        interviewTakeaway: 'Diffie-Hellman enables two parties to derive a shared secret over a public wire without eavesdroppers learning the key.'
+        label: '3. ServerHello + Cipher Selected (TLS_AES_256_GCM_SHA384)',
+        badge: 'Step 3: ServerHello',
+        activeNodes: ['tls-server', 'tls-client'],
+        packetInfo: { srcIp: 'Server', dstIp: 'Client', dstPort: 443, protocol: 'TLS', payloadSummary: 'Cipher: TLS_AES_256_GCM_SHA384, Server ECDHE KeyShare' },
+        whatIsHappening: 'Server selects the optimal cipher suite and responds with its own ephemeral Diffie-Hellman public key share.',
+        interviewTakeaway: 'Ephemeral keys guarantee Perfect Forward Secrecy (PFS) for all communications.'
       },
       {
         id: 4,
-        label: '4. Encrypted Application Data Transfer',
-        badge: 'AES-GCM Encrypted',
+        label: '4. Server Certificate Exchange: X.509 Digital Certificate Sent',
+        badge: 'Step 4: Certificate',
+        activeNodes: ['tls-server', 'tls-client'],
+        packetInfo: { srcIp: 'Server', dstIp: 'Client', dstPort: 443, protocol: 'TLS', payloadSummary: 'X.509 Digital Certificate + Encrypted Extensions' },
+        whatIsHappening: 'Server transmits its CA-signed digital certificate containing its public identity and digital signature.',
+        interviewTakeaway: 'In TLS 1.3, the certificate exchange itself is already encrypted by handshake keys.'
+      },
+      {
+        id: 5,
+        label: '5. Client CA Validation: Certificate Authority Chain Verified',
+        badge: 'Step 5: CA Verified ✓',
+        activeNodes: ['tls-client'],
+        decision: 'INSPECT',
+        ruleMatched: 'Trust Store: DigiCert Global Root CA Validated ✓ (Domain: example.com)',
+        whatIsHappening: 'Client browser validates certificate signatures against trusted local Root CA store and checks expiry/revocation.',
+        interviewTakeaway: 'CA validation stops Man-in-the-Middle (MITM) spoofing and impersonation attacks.'
+      },
+      {
+        id: 6,
+        label: '6. Master Secret Derived: Shared Session Keys Computed',
+        badge: 'Step 6: Key Derivation',
         activeNodes: ['tls-client', 'tls-server'],
-        packetInfo: { srcIp: 'Client', dstIp: 'Server', dstPort: 443, protocol: 'TLS', isEncrypted: true, payloadSummary: 'Encrypted HTTP/2 / HTTP/3 Traffic (AES-256-GCM)' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Client and Server combine ECDHE public shares with their private secrets to compute the exact same Master Secret independently.',
+        interviewTakeaway: 'Diffie-Hellman mathematics allow secret generation without transmitting the key over the wire.'
+      },
+      {
+        id: 7,
+        label: '7. Handshake Finished: TLS 1.3 Secure Session Active',
+        badge: 'Step 7: Handshake Complete',
+        activeNodes: ['tls-client', 'tls-server'],
         decision: 'ALLOW',
-        whatIsHappening: 'Handshake complete! High-speed symmetric AES-256-GCM encryption secures all subsequent web traffic.',
-        interviewTakeaway: 'Application data enjoys full Confidentiality, Integrity, and Forward Secrecy.'
+        ruleMatched: 'Session Status: 🔒 TLS 1.3 AES-256-GCM Secure Channel Active',
+        whatIsHappening: 'Both sides exchange Finished MAC digests. The handshake transitions 100% to symmetric encryption.',
+        interviewTakeaway: 'Handshake wraps in exactly 1-RTT, enabling immediate application payload transmission.'
+      },
+      {
+        id: 8,
+        label: '8. Encrypted Application Data Transfer (AES-256-GCM / HTTP/2)',
+        badge: 'Step 8: AES-256-GCM ✓',
+        activeNodes: ['tls-client', 'tls-server'],
+        packetInfo: { srcIp: '192.168.1.100', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TLS', isEncrypted: true, payloadSummary: '🔒 HTTP/2 GET /api/v1/data (AES-256-GCM)' },
+        decision: 'ALLOW',
+        whatIsHappening: 'High-speed hardware-accelerated symmetric encryption secures all user browsing, API calls, and credentials.',
+        interviewTakeaway: 'Symmetric AES-256-GCM delivers gigabit-speed bulk encryption with authenticated integrity tags.'
       }
     ]
   }
