@@ -94,7 +94,7 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
 
   const handleReplay = () => {
     setCurrentStepIndex(0);
-    setIsPlaying(true);
+    setIsPlaying(false);
   };
 
   const handleScrub = (stepIndex: number) => {
