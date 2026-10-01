@@ -2021,8 +2021,8 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 14. What is the difference between IDS and IPS?
   {
     id: 14,
-    categoryId: 'ids-ips',
-    category: 'IDS / IPS & Threat Detection',
+    categoryId: 'threats-attacks',
+    category: 'DDoS & IDS/IPS',
     title: 'What is the difference between IDS and IPS?',
     subtitle: 'Compare passive detection & out-of-band alerts vs active inline blocking and TCP resets.',
     visualType: 'ids-vs-ips',
@@ -2145,8 +2145,8 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 15. Where would you place an IDS/IPS in a network, and how does it inspect traffic?
   {
     id: 15,
-    categoryId: 'ids-ips',
-    category: 'IDS / IPS & Threat Detection',
+    categoryId: 'threats-attacks',
+    category: 'DDoS & IDS/IPS',
     title: 'Where would you place an IDS/IPS in a network, and how does it inspect traffic?',
     subtitle: 'Analyze sensor placement at Perimeter, DMZ, Core Backbone, and Host endpoints.',
     visualType: 'ids-placement',
@@ -2260,8 +2260,8 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 16. How would you investigate traffic that is being blocked by an IPS or firewall?
   {
     id: 16,
-    categoryId: 'ids-ips',
-    category: 'IDS / IPS & Threat Detection',
+    categoryId: 'troubleshooting',
+    category: 'Triage & Diagnostics',
     title: 'How would you investigate traffic that is being blocked by an IPS or firewall?',
     subtitle: 'Master the 5-step systematic troubleshooting and security triage methodology.',
     visualType: 'troubleshooting-flow',
@@ -2391,8 +2391,8 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 17. What is network segmentation, and why is it important for security?
   {
     id: 17,
-    categoryId: 'segmentation',
-    category: 'Network Segmentation & DMZ',
+    categoryId: 'zero-trust-access',
+    category: 'Zero Trust & WAF',
     title: 'What is network segmentation, and why is it important for security?',
     subtitle: 'Explore multi-tier architecture, DMZs, VLAN isolation, and stopping lateral movement.',
     visualType: 'network-segmentation',
@@ -2499,7 +2499,7 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   {
     id: 18,
     categoryId: 'vpn-ipsec',
-    category: 'VPN & IPsec Security',
+    category: 'VPN, IPsec & TLS',
     title: 'What is a VPN, and what is the difference between site-to-site and remote-access VPNs?',
     subtitle: 'Compare router-to-router encrypted site links vs user client-to-gateway remote tunnels.',
     visualType: 'vpn-architectures',
@@ -2602,7 +2602,7 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   {
     id: 19,
     categoryId: 'vpn-ipsec',
-    category: 'VPN & IPsec Security',
+    category: 'VPN, IPsec & TLS',
     title: 'What is IPsec, and how does an IPsec VPN protect network traffic?',
     subtitle: 'Inspect AH vs ESP, Tunnel vs Transport modes, and IKE Phase 1 / Phase 2 negotiations.',
     visualType: 'ipsec-encapsulation',
@@ -2727,8 +2727,8 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
   // 20. What is TLS, and how does the TLS handshake establish a secure connection?
   {
     id: 20,
-    categoryId: 'tls',
-    category: 'TLS & Cryptographic Handshakes',
+    categoryId: 'vpn-ipsec',
+    category: 'VPN, IPsec & TLS',
     title: 'What is TLS, and how does the TLS handshake establish a secure connection?',
     subtitle: 'Walk through the cryptographic steps of modern TLS 1.3 and TLS 1.2 handshakes.',
     visualType: 'tls-handshake',

@@ -36,10 +36,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
     if (!matchesSearch) return false;
     if (selectedCategory === 'all') return true;
-    if (selectedCategory === 'fundamentals') return q.categoryId === 'fundamentals';
-    if (selectedCategory === 'acl-rules') return q.categoryId === 'acl-rules';
-    if (selectedCategory === 'nat') return q.categoryId === 'nat';
-    if (selectedCategory === 'security') return ['ids-ips', 'segmentation', 'vpn-ipsec', 'tls'].includes(q.categoryId);
     return q.categoryId === selectedCategory;
   });
 

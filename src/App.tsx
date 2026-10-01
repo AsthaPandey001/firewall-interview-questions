@@ -75,10 +75,6 @@ export function App() {
     // Check if current question is in selected category; if not, switch to first question of category
     const matchingQuestions = QUESTIONS_DATA.filter((q) => {
       if (catId === 'all') return true;
-      if (catId === 'fundamentals') return q.categoryId === 'fundamentals';
-      if (catId === 'acl-rules') return q.categoryId === 'acl-rules';
-      if (catId === 'nat') return q.categoryId === 'nat';
-      if (catId === 'security') return ['ids-ips', 'segmentation', 'vpn-ipsec', 'tls'].includes(q.categoryId);
       return q.categoryId === catId;
     });
 

@@ -14,13 +14,14 @@ export interface CategoryTab {
 
 export const HEADER_CATEGORIES: CategoryTab[] = [
   { id: 'all', label: 'All 50 Labs', count: 50 },
-  { id: 'fundamentals', label: 'Firewalls & Routers', count: 7 },
-  { id: 'acl-rules', label: 'ACL & Policies', count: 12 },
+  { id: 'fundamentals', label: 'Firewalls & Routers', count: 8 },
+  { id: 'acl-rules', label: 'ACL & Policies', count: 11 },
+  { id: 'nat', label: 'NAT & Translation', count: 3 },
   { id: 'network-services', label: 'ARP, DNS & DHCP', count: 6 },
   { id: 'threats-attacks', label: 'DDoS & IDS/IPS', count: 6 },
   { id: 'vpn-ipsec', label: 'VPN, IPsec & TLS', count: 6 },
-  { id: 'zero-trust-access', label: 'Zero Trust & WAF', count: 7 },
-  { id: 'troubleshooting', label: 'Triage Labs', count: 2 },
+  { id: 'zero-trust-access', label: 'Zero Trust & WAF', count: 6 },
+  { id: 'troubleshooting', label: 'Triage Labs', count: 4 },
 ];
 
 interface HeaderProps {
