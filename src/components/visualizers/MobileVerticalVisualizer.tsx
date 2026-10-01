@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { 
   ArrowDown, 
   CheckCircle2, 
@@ -6,16 +6,16 @@ import {
   AlertTriangle, 
   Radio, 
   Activity,
-  Layers,
-  FileCode,
-  Sparkles
+  ShieldAlert,
+  ShieldCheck,
+  Lock,
+  Flame
 } from 'lucide-react';
 import type { QuestionData, AnimationStep } from '../../types';
 import { 
   RealisticLaptop, 
   RealisticRouterFirewall, 
   RealisticServer,
-  RealisticSwitch
 } from './DeviceComponents';
 
 interface MobileVerticalVisualizerProps {
@@ -32,16 +32,23 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
   step,
   totalSteps
 }) => {
-  // Progressive visibility thresholds:
-  // Step 0: Only Step 1 component (Source Device) is visible
-  // Step 1: Packet in transit + Middle Gateway appears
-  // Step 2+: Inspection & Policy engine active
-  // Final Steps: Target Server & Delivery verdict appear
-  const showSource = true; // Always visible as initial step
+  // Viewport camera / auto-follow refs
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sourceRef = useRef<HTMLDivElement>(null);
+  const packet1Ref = useRef<HTMLDivElement>(null);
+  const gatewayRef = useRef<HTMLDivElement>(null);
+  const packet2Ref = useRef<HTMLDivElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
+
+  // Progressive visibility thresholds based on currentStepIndex:
+  // Step 0: ONLY Source Host is visible
+  // Step 1+: Packet 1 & Gateway appear
+  // Later steps: Delivery connector & Target Server appear
+  const showSource = true;
   const showPacket1 = currentStepIndex >= 1;
   const showGateway = currentStepIndex >= 1;
-  const showPacket2 = currentStepIndex >= Math.max(2, totalSteps - 2);
-  const showTarget = currentStepIndex >= Math.max(2, totalSteps - 2);
+  const showPacket2 = currentStepIndex >= 2 && currentStepIndex >= Math.floor(totalSteps * 0.45);
+  const showTarget = currentStepIndex >= 2 && currentStepIndex >= Math.floor(totalSteps * 0.55);
 
   const isEarly = currentStepIndex <= 1;
   const isAtMiddle = currentStepIndex >= 2 && currentStepIndex < totalSteps - 2;
@@ -50,7 +57,17 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
   // Decision states
   const isAllowed = step.decision === 'ALLOW' || step.decision === 'TRANSLATE' || step.decision === 'ENCRYPT';
   const isDenied = step.decision === 'DENY' || step.decision === 'DROP';
-  const isInspecting = step.decision === 'INSPECT' || (currentStepIndex >= 2 && !isFinal);
+  const isInspecting = step.decision === 'INSPECT' || (currentStepIndex >= 2 && !isFinal && !isDenied);
+
+  // Threat detection detection (for Q14/Q15/malware/denied packets)
+  const isThreatOrMalware = 
+    isDenied || 
+    question.id === 14 || 
+    question.id === 15 || 
+    step.label.toLowerCase().includes('malicious') || 
+    step.label.toLowerCase().includes('threat') || 
+    step.label.toLowerCase().includes('unauthorized') ||
+    step.label.toLowerCase().includes('ssh');
 
   // Source host props
   const srcIp = step.packetInfo ? `${step.packetInfo.srcIp}${step.packetInfo.srcPort ? `:${step.packetInfo.srcPort}` : ''}` : '10.0.0.25:52410';
@@ -96,24 +113,61 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
     payloadSummary: 'HTTPS Request Payload'
   };
 
+  // Smooth camera auto-follow: center current active node without causing top reset on manual scroll
+  useEffect(() => {
+    let targetElement: HTMLDivElement | null = null;
+
+    if (currentStepIndex === 0) {
+      targetElement = sourceRef.current;
+    } else if (currentStepIndex === 1) {
+      targetElement = packet1Ref.current;
+    } else if (currentStepIndex >= 2 && currentStepIndex < totalSteps - 2) {
+      targetElement = gatewayRef.current;
+    } else if (currentStepIndex >= totalSteps - 2) {
+      targetElement = isDenied ? gatewayRef.current : targetRef.current || gatewayRef.current;
+    }
+
+    if (targetElement && containerRef.current) {
+      // Calculate relative offset within container for smooth focus
+      const container = containerRef.current;
+      const elementTop = targetElement.offsetTop;
+      const elementHeight = targetElement.offsetHeight;
+      const containerHeight = container.clientHeight;
+
+      const targetScroll = Math.max(0, elementTop - containerHeight / 3);
+      container.scrollTo({
+        top: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentStepIndex, isDenied, totalSteps]);
+
   return (
-    <div className="w-full flex flex-col items-center py-4 px-2 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/90 rounded-2xl border border-slate-200/90 shadow-2xs min-h-[380px]">
-      
-      {/* Top Mobile Mode Status Header */}
-      <div className="w-full flex items-center justify-between pb-3 mb-4 border-b border-slate-200 px-2 text-xs">
+    <div 
+      ref={containerRef}
+      className="w-full flex flex-col items-center py-4 px-2 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/90 rounded-2xl border border-slate-200/90 shadow-2xs min-h-[420px] max-h-[620px] overflow-y-auto no-scrollbar relative"
+    >
+      {/* ───────────────────────────────────────────────────────────── */}
+      {/* STICKY CURRENT STEP INDICATOR PILL (Always visible on scroll) */}
+      {/* ───────────────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-30 w-full flex items-center justify-between pb-2 mb-3 bg-white/95 backdrop-blur-xs border-b border-slate-200 px-2 text-xs">
         <div className="flex items-center gap-1.5 font-bold text-slate-800">
-          <Radio className="h-4 w-4 text-blue-600 animate-pulse" />
-          <span>Step-by-Step Flow</span>
+          <Radio className="h-3.5 w-3.5 text-blue-600 animate-pulse" />
+          <span className="text-[11px] truncate max-w-[170px]">
+            {isDenied ? 'PACKET BLOCKED' : isAllowed && isFinal ? 'DELIVERED TO TARGET' : isInspecting ? 'INSPECTING RULES' : 'TRANSMITTING'}
+          </span>
         </div>
-        <span className="text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
-          Step {currentStepIndex + 1} of {totalSteps}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
+            Step {currentStepIndex + 1} / {totalSteps}
+          </span>
+        </div>
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 1. COMPONENT 1: SOURCE HOST (Always visible initially) */}
+      {/* 1. COMPONENT 1: SOURCE HOST (Step 0+) */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex flex-col items-center animate-fadeIn">
+      <div ref={sourceRef} className="relative z-10 flex flex-col items-center animate-fadeIn">
         <RealisticLaptop
           label={srcLabel}
           sublabel={srcIp}
@@ -125,24 +179,28 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       </div>
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 2. COMPONENT 2: CONNECTOR & PACKET IN FLIGHT (Revealed Step 1+) */}
+      {/* 2. COMPONENT 2: CONNECTOR & PACKET IN FLIGHT (Step 1+) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {showPacket1 && (
-        <div className="relative w-full max-w-xs py-3 flex flex-col items-center animate-fadeIn">
-          {/* Vertical Track Line */}
-          <div className="w-1.5 h-12 bg-slate-200 rounded-full relative overflow-hidden">
+        <div ref={packet1Ref} className="relative w-full max-w-xs py-2 flex flex-col items-center animate-fadeIn">
+          {/* Vertical Cable Line */}
+          <div className="w-1.5 h-10 bg-slate-200 rounded-full relative overflow-hidden">
             <div 
-              className="w-full bg-blue-500 rounded-full transition-all duration-500"
+              className={`w-full rounded-full transition-all duration-500 ${
+                isThreatOrMalware ? 'bg-rose-500 shadow-sm' : 'bg-blue-500 shadow-sm'
+              }`}
               style={{
-                height: currentStepIndex >= 1 ? '100%' : '25%',
-                boxShadow: '0 0 10px rgba(59, 130, 246, 0.6)'
+                height: currentStepIndex >= 1 ? '100%' : '30%',
+                boxShadow: isThreatOrMalware ? '0 0 10px rgba(239, 68, 68, 0.6)' : '0 0 10px rgba(59, 130, 246, 0.6)'
               }}
             />
           </div>
 
           {/* Floating Downward Packet Card */}
           <div className={`w-full max-w-[270px] my-1 p-2.5 rounded-xl border shadow-md transition-all duration-300 z-20 ${
-            isEarly
+            isThreatOrMalware
+              ? 'bg-rose-50/95 border-rose-400 ring-2 ring-rose-400/20'
+              : isEarly
               ? 'bg-blue-50/95 border-blue-400 ring-2 ring-blue-400/20'
               : isAtMiddle
               ? 'bg-amber-50/95 border-amber-400 ring-2 ring-amber-400/20'
@@ -150,10 +208,21 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
           }`}>
             <div className="flex items-center justify-between text-[11px] font-mono font-bold border-b border-slate-200/80 pb-1 mb-1">
               <span className="flex items-center gap-1 text-slate-800">
-                <ArrowDown className="h-3 w-3 text-blue-600 animate-bounce" />
-                PACKET IN TRANSIT
+                {isThreatOrMalware ? (
+                  <>
+                    <ShieldAlert className="h-3 w-3 text-rose-600 animate-pulse" />
+                    <span className="text-rose-700 font-bold">SUSPICIOUS / INBOUND</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowDown className="h-3 w-3 text-blue-600 animate-bounce" />
+                    <span>PACKET IN TRANSIT</span>
+                  </>
+                )}
               </span>
-              <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[10px] font-bold">
+              <span className={`px-1.5 py-0.5 rounded text-white text-[10px] font-bold ${
+                isThreatOrMalware ? 'bg-rose-600' : 'bg-blue-600'
+              }`}>
                 {pkt.protocol} {pkt.flags ? `[${pkt.flags}]` : ''}
               </span>
             </div>
@@ -179,10 +248,10 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 3. COMPONENT 3: FIREWALL GATEWAY (Revealed on Step 1+) */}
+      {/* 3. COMPONENT 3: FIREWALL / SECURITY GATEWAY (Step 1+) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {showGateway && (
-        <div className="relative z-10 flex flex-col items-center w-full max-w-xs animate-fadeIn">
+        <div ref={gatewayRef} className="relative z-10 flex flex-col items-center w-full max-w-xs animate-fadeIn">
           <RealisticRouterFirewall
             label={gw.label}
             sublabel={gw.sub}
@@ -190,25 +259,38 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
             isSuccess={isAllowed}
             isDanger={isDenied}
             statusText={
-              isAllowed 
+              isDenied 
+                ? '✕ BLOCKED AT FIREWALL' 
+                : isAllowed 
                 ? 'VERDICT: ALLOWED ✓' 
-                : isDenied 
-                ? 'VERDICT: DROPPED ✕' 
                 : isInspecting 
                 ? 'INSPECTING RULES...' 
                 : undefined
             }
           />
 
+          {/* Blocked Barrier Indicator (If packet is dropped) */}
+          {isDenied && (
+            <div className="w-full mt-2 p-2 rounded-xl bg-rose-100/90 border border-rose-300 text-center animate-pop-in">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-mono font-bold text-rose-800">
+                <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
+                <span>PACKET BLOCKED & HALTED AT FIREWALL</span>
+              </div>
+              <p className="text-[10px] text-rose-700 mt-0.5">
+                Traffic cannot cross the security boundary. Server remains safe.
+              </p>
+            </div>
+          )}
+
           {/* Live Evaluation & Policy Box attached to Firewall */}
-          <div className={`w-full mt-3 rounded-xl border p-3 text-xs shadow-xs transition-all ${
+          <div className={`w-full mt-2.5 rounded-xl border p-3 text-xs shadow-xs transition-all ${
             isAllowed
               ? 'bg-emerald-50/80 border-emerald-300 text-emerald-950'
               : isDenied
               ? 'bg-rose-50/80 border-rose-300 text-rose-950'
               : 'bg-white border-slate-200 text-slate-800'
           }`}>
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1.5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1 mb-1.5">
               <span className="font-mono text-[11px] font-bold flex items-center gap-1 text-slate-800">
                 <Activity className="h-3.5 w-3.5 text-blue-600" />
                 {step.label}
@@ -230,20 +312,9 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
             {step.ruleMatched && (
               <div className="mt-2 p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-mono flex items-center justify-between">
                 <span className="text-slate-500 font-semibold">Matched Rule:</span>
-                <span className="text-blue-700 font-bold truncate max-w-[140px]">{step.ruleMatched}</span>
-              </div>
-            )}
-
-            {/* State Table if available */}
-            {step.stateTable && step.stateTable.length > 0 && (
-              <div className="mt-2 p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-mono">
-                <div className="flex items-center justify-between text-slate-500 font-bold uppercase text-[9px] mb-0.5">
-                  <span>State Session</span>
-                  <span className="text-emerald-700">[{step.stateTable[0].state}]</span>
-                </div>
-                <p className="text-slate-700 font-semibold truncate">
-                  {step.stateTable[0].srcIp}:{step.stateTable[0].srcPort} ↔ {step.stateTable[0].dstIp}:{step.stateTable[0].dstPort}
-                </p>
+                <span className={`font-bold truncate max-w-[140px] ${isDenied ? 'text-rose-700' : 'text-blue-700'}`}>
+                  {step.ruleMatched}
+                </span>
               </div>
             )}
 
@@ -251,8 +322,8 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
             {step.natTable && step.natTable.length > 0 && (
               <div className="mt-2 p-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[10px] font-mono">
                 <div className="flex items-center justify-between text-slate-500 font-bold uppercase text-[9px] mb-0.5">
-                  <span>NAT Mapping</span>
-                  <span className="text-indigo-700">ACTIVE</span>
+                  <span>NAT Translation Entry</span>
+                  <span className="text-emerald-700 font-bold">ACTIVE</span>
                 </div>
                 <p className="text-slate-700 font-semibold truncate">
                   {step.natTable[0].insideLocal} → <span className="text-indigo-700 font-bold">{step.natTable[0].insideGlobal}</span>
@@ -264,12 +335,12 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 4. COMPONENT 4: CONNECTOR 2 & VERDICT (Revealed in Decision Step) */}
+      {/* 4. COMPONENT 4: CONNECTOR 2 & VERDICT IN FLIGHT (Step 2+) */}
       {/* ───────────────────────────────────────────────────────────── */}
       {showPacket2 && (
-        <div className="relative w-full max-w-xs py-3 flex flex-col items-center animate-fadeIn">
-          {/* Vertical Track Line */}
-          <div className="w-1.5 h-12 bg-slate-200 rounded-full relative overflow-hidden">
+        <div ref={packet2Ref} className="relative w-full max-w-xs py-2 flex flex-col items-center animate-fadeIn">
+          {/* Vertical Cable Line */}
+          <div className="w-1.5 h-10 bg-slate-200 rounded-full relative overflow-hidden">
             <div 
               className={`w-full rounded-full transition-all duration-500 ${
                 isAllowed
@@ -279,7 +350,7 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
                   : 'bg-slate-300'
               }`}
               style={{
-                height: isFinal || isAllowed ? '100%' : isDenied ? '40%' : '15%',
+                height: isFinal || isAllowed ? '100%' : isDenied ? '20%' : '15%',
                 boxShadow: isAllowed ? '0 0 10px rgba(16, 185, 129, 0.6)' : undefined
               }}
             />
@@ -301,7 +372,7 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
             ) : isDenied ? (
               <div className="flex items-center justify-center gap-1.5 text-xs font-mono text-rose-800">
                 <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
-                <span>PACKET DROPPED AT FIREWALL ✕</span>
+                <span>BLOCKED — NO EGRESS TRAFFIC ✕</span>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-slate-500">
@@ -314,10 +385,10 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       )}
 
       {/* ───────────────────────────────────────────────────────────── */}
-      {/* 5. COMPONENT 5: TARGET DESTINATION SERVER (Revealed in Delivery Step) */}
+      {/* 5. COMPONENT 5: TARGET DESTINATION SERVER */}
       {/* ───────────────────────────────────────────────────────────── */}
       {showTarget && (
-        <div className="relative z-10 flex flex-col items-center animate-fadeIn">
+        <div ref={targetRef} className="relative z-10 flex flex-col items-center animate-fadeIn">
           <RealisticServer
             label={dstLabel}
             sublabel={dstIp}
@@ -325,7 +396,13 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
             isActive={isAllowed && isFinal}
             isSuccess={isAllowed && isFinal}
             isDanger={isDenied && isFinal}
-            statusText={isAllowed && isFinal ? 'DELIVERED TO TARGET' : undefined}
+            statusText={
+              isAllowed && isFinal 
+                ? 'DELIVERED TO TARGET ✓' 
+                : isDenied 
+                ? 'UNREACHABLE / NO PACKET' 
+                : 'WAITING...'
+            }
           />
         </div>
       )}
@@ -334,7 +411,7 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       {/* INTERVIEW KEY TAKEAWAY CARD */}
       {/* ───────────────────────────────────────────────────────────── */}
       {step.interviewTakeaway && (
-        <div className="w-full max-w-xs mt-4 p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-xs animate-fadeIn">
+        <div className="w-full max-w-xs mt-3 p-3 rounded-xl bg-blue-50/90 border border-blue-200 text-xs animate-fadeIn">
           <div className="flex items-center gap-1.5 font-bold text-blue-950 mb-1">
             <AlertTriangle className="h-3.5 w-3.5 text-blue-600 shrink-0" />
             <span>Interview Answer Point</span>
@@ -344,7 +421,6 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
           </p>
         </div>
       )}
-
     </div>
   );
 };

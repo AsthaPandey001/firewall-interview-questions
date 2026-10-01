@@ -527,33 +527,118 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Packet Ingress on Interface Gi0/1',
-        badge: 'Interface Ingress',
-        activeNodes: ['client', 'router-iface'],
-        packetInfo: { srcIp: '10.0.1.25', dstIp: '192.168.10.5', dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Packet arrives at GigabitEthernet0/1 where the `SECURE_INBOUND` ACL is bound in the `in` direction.',
-        interviewTakeaway: 'ACLs must be explicitly bound to an interface and direction to take effect.'
+        label: 'Network Topology Initialized (Client Only)',
+        badge: 'Client Origin',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'The network session begins at the Client workstation (10.0.0.25). No security devices are engaged yet.',
+        interviewTakeaway: 'Traffic origin begins in the trusted local zone.'
       },
       {
         id: 2,
-        label: 'Evaluate Rule 10: Source & Dest Match',
-        badge: 'Rule 10 (Seq 10)',
-        activeNodes: ['acl-evaluator'],
-        activeRuleIndex: 0,
-        decision: 'ALLOW',
-        ruleMatched: '10 permit tcp 10.0.1.0/24 host 192.168.10.5 eq 443',
-        whatIsHappening: 'Src 10.0.1.25 matches subnet 10.0.1.0/24, Dest 192.168.10.5 matches host, Port 443 matches. Action: PERMIT.',
-        interviewTakeaway: 'Matching is immediate and deterministic. Rule 20 is never evaluated.'
+        label: 'Firewall Gateway Established',
+        badge: 'Perimeter Barrier',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'The perimeter Firewall is established and connected to the client interface.',
+        interviewTakeaway: 'The firewall sits in-line between the client and untrusted zones.'
       },
       {
         id: 3,
-        label: 'Packet Forwarded to Destination',
-        badge: 'Forwarding',
-        activeNodes: ['server'],
-        packetInfo: { srcIp: '10.0.1.25', dstIp: '192.168.10.5', dstPort: 443, protocol: 'TCP' },
+        label: 'Destination Server Connected',
+        badge: 'Target Server',
+        activeNodes: ['client', 'firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Destination Server (203.0.113.50:443) is connected to the egress interface of the firewall.',
+        interviewTakeaway: 'Complete topology is now connected with the firewall controlling access.'
+      },
+      {
+        id: 4,
+        label: 'Client Generates HTTPS Packet',
+        badge: 'TCP 5-Tuple',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Client prepares a TCP SYN packet destined for port 443 with source 10.0.0.25.',
+        interviewTakeaway: 'Every packet carries a 5-tuple header for firewall evaluation.'
+      },
+      {
+        id: 5,
+        label: 'Packet Transmits: Client → Firewall',
+        badge: 'In Flight',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'The packet physically travels across the link towards the firewall ingress interface.',
+        interviewTakeaway: 'Traffic in flight must be intercepted before reaching the target.'
+      },
+      {
+        id: 6,
+        label: 'Firewall Intercepts & Buffers Packet',
+        badge: 'Inspecting',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall buffers the packet at ingress and transitions state to INSPECTING.',
+        interviewTakeaway: 'Firewalls buffer frames while the policy engine evaluates rule conditions.'
+      },
+      {
+        id: 7,
+        label: 'ACL Rule Table Engaged',
+        badge: 'Top-Down ACL',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'The Access Control List (ACL) is loaded for sequential top-to-bottom evaluation.',
+        interviewTakeaway: 'ACLs are ordered lists where rules are tested one by one.'
+      },
+      {
+        id: 8,
+        label: 'Field-by-Field Criteria Matching',
+        badge: 'Criteria Check',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall tests: Source 10.0.0.25 ∈ 10.0.0.0/24 (✓), Dest 203.0.113.50 (✓), TCP (✓), Port 443 (✓).',
+        interviewTakeaway: 'All 5-tuple parameters must match the rule criteria simultaneously.'
+      },
+      {
+        id: 9,
+        label: 'Rule 1 Match Confirmed',
+        badge: 'Rule 1 Match ✓',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
         decision: 'ALLOW',
-        whatIsHappening: 'Router routes packet out interface Gi0/2 toward destination server 192.168.10.5.',
-        interviewTakeaway: 'Successful ACL evaluation allows the routing engine to switch the frame to the egress queue.'
+        ruleMatched: 'Rule 1: ALLOW 10.0.0.0/24 -> 203.0.113.50:443',
+        whatIsHappening: 'Rule 1 is fully satisfied. The firewall halts further rule evaluation (Rules 2 & 3 skipped).',
+        interviewTakeaway: 'First match terminates ACL evaluation immediately.'
+      },
+      {
+        id: 10,
+        label: 'Action Executed: ALLOW',
+        badge: 'Action ALLOW',
+        activeNodes: ['firewall'],
+        decision: 'ALLOW',
+        whatIsHappening: 'Firewall issues an ALLOW verdict and opens the egress gate for packet forwarding.',
+        interviewTakeaway: 'Permitted packets are queued for egress interface transmission.'
+      },
+      {
+        id: 11,
+        label: 'Packet Forwards: Firewall → Server',
+        badge: 'Forwarding',
+        activeNodes: ['firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'The packet physically travels from the firewall egress port to the destination server.',
+        interviewTakeaway: 'Permitted traffic is routed along the downstream network link.'
+      },
+      {
+        id: 12,
+        label: 'Server Receives Packet & Accepts Connection',
+        badge: 'Delivered ✓',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Server receives the SYN packet on port 443 and initiates TCP connection acceptance.',
+        interviewTakeaway: 'Complete ACL flow: Client → Packet → Firewall → ACL Match → ALLOW → Server Delivery.'
       }
     ]
   },
@@ -605,41 +690,178 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: '1. Ingress & Sanity Checks',
-        badge: 'Sanity',
-        activeNodes: ['step-ingress'],
-        packetInfo: { srcIp: '192.168.1.10', dstIp: '10.0.0.8', dstPort: 80, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'Packet enters ingress buffer. Firewall checks IP checksums, validates header lengths, and checks anti-spoofing filters.',
-        interviewTakeaway: 'Malformed packets or spoofed source addresses are dropped before hitting the rule engine.'
+        label: 'Network Topology Initialized (Client Only)',
+        badge: 'Client Origin',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Client (10.0.0.25) is ready to initiate traffic.',
+        interviewTakeaway: 'The packet lifecycle begins at the client endpoint.'
       },
       {
         id: 2,
-        label: '2. State Table Lookup',
-        badge: 'State Table',
-        activeNodes: ['step-statetable'],
-        decision: 'INSPECT',
-        whatIsHappening: 'Firewall queries active session table. Since this is a new SYN packet, no state exists. Flow proceeds to policy engine (Slow Path).',
-        interviewTakeaway: 'State lookup distinguishes new connection attempts from existing established streams.'
+        label: 'Firewall Gateway Connected',
+        badge: 'Firewall Ingress',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Firewall decision engine is online and connected to the client interface.',
+        interviewTakeaway: 'The security gateway acts as the gatekeeper for all network egress.'
       },
       {
         id: 3,
-        label: '3. Sequential Rule Evaluation',
-        badge: 'Top-to-Bottom',
-        activeNodes: ['step-rules'],
-        activeRuleIndex: 1,
-        decision: 'INSPECT',
-        whatIsHappening: 'Firewall scans rules 1, 2, 3 in sequence until a match is found. Rule 2 matches Source IP & Port.',
-        interviewTakeaway: 'Rules are evaluated strictly in sequence until the first match.'
+        label: 'Target Server Connected',
+        badge: 'Target Server',
+        activeNodes: ['client', 'firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Destination Server (203.0.113.50:443) is connected to the egress zone.',
+        interviewTakeaway: 'The complete physical path is mapped out.'
       },
       {
         id: 4,
-        label: '4. Action Execution & State Creation',
-        badge: 'Verdict',
-        activeNodes: ['step-verdict'],
+        label: 'Scenario 1: Permitted HTTPS Packet Created',
+        badge: 'Port 443 SYN',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Client creates an authorized HTTPS packet destined for port 443.',
+        interviewTakeaway: 'Authorized traffic carries standard well-known service ports.'
+      },
+      {
+        id: 5,
+        label: 'Packet Transits to Firewall',
+        badge: 'In Transit',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet physically travels across the link towards the firewall.',
+        interviewTakeaway: 'In-transit packets are captured at the firewall ingress interface.'
+      },
+      {
+        id: 6,
+        label: 'Firewall Ingress & Buffer',
+        badge: 'Ingress Point',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Packet arrives at firewall ingress buffer and is held for inspection.',
+        interviewTakeaway: 'The firewall buffers packets while performing state and rule evaluation.'
+      },
+      {
+        id: 7,
+        label: '5-Tuple Header Fields Extracted',
+        badge: 'Header Extraction',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall extracts: Source 10.0.0.25, Dest 203.0.113.50, Protocol TCP, Port 443.',
+        interviewTakeaway: 'Extracted headers form the criteria for policy lookup.'
+      },
+      {
+        id: 8,
+        label: 'Rules Evaluated Sequentially',
+        badge: 'Rule Engine',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Security rules are scanned top-down for matching conditions.',
+        interviewTakeaway: 'Rules are evaluated in strict priority order.'
+      },
+      {
+        id: 9,
+        label: 'Field-by-Field Criteria Verified',
+        badge: 'All Fields Match',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Source IP, Destination IP, Protocol, and Port 443 all match Rule 1.',
+        interviewTakeaway: 'Deterministic match on all parameters confirms rule execution.'
+      },
+      {
+        id: 10,
+        label: 'First Match Win: Rule 1 Matched',
+        badge: 'Match Confirmed',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
         decision: 'ALLOW',
-        ruleMatched: 'Rule 2: ALLOW 192.168.1.0/24 -> 10.0.0.8:80',
-        whatIsHappening: 'ALLOW action executes. Connection is added to state table. Packet is transmitted on egress interface.',
-        interviewTakeaway: 'A successful new connection rule match instantiates a state table record for return traffic.'
+        ruleMatched: 'Rule 1: ALLOW 10.0.0.0/24 -> 203.0.113.50:443',
+        whatIsHappening: 'Rule 1 matches. Decision engine halts further rule checks.',
+        interviewTakeaway: 'First match terminates rule evaluation immediately.'
+      },
+      {
+        id: 11,
+        label: 'Action Executed: ALLOW',
+        badge: 'Action: ALLOW',
+        activeNodes: ['firewall'],
+        decision: 'ALLOW',
+        whatIsHappening: 'Firewall allows packet and prepares egress forwarding.',
+        interviewTakeaway: 'Permitted traffic is passed to the egress interface queue.'
+      },
+      {
+        id: 12,
+        label: 'Packet Forwards: Firewall → Server',
+        badge: 'Egress Delivery',
+        activeNodes: ['firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Authorized packet leaves firewall and travels to Server.',
+        interviewTakeaway: 'Packet safely crosses the security boundary to the server.'
+      },
+      {
+        id: 13,
+        label: 'Server Receives Packet (Scenario 1 Complete)',
+        badge: 'Received ✓',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Server receives HTTPS SYN packet. Connection established!',
+        interviewTakeaway: 'Scenario 1 ends with full end-to-end delivery of authorized traffic.'
+      },
+      {
+        id: 14,
+        label: 'Scenario 2: Unauthorized Port 22 (SSH) Packet Created',
+        badge: 'SSH Port 22 ⚠',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52411, dstPort: 22, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'A new packet arrives on unauthorized SSH Port 22 to test firewall denial.',
+        interviewTakeaway: 'Security firewalls protect internal services by blocking unauthorized ports.'
+      },
+      {
+        id: 15,
+        label: 'Unauthorized Packet Transits to Firewall',
+        badge: 'SSH In Transit',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52411, dstPort: 22, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Packet on Port 22 travels towards the firewall perimeter.',
+        interviewTakeaway: 'The packet approaches the security perimeter.'
+      },
+      {
+        id: 16,
+        label: 'Firewall Inspects: No Allow Rule Matches',
+        badge: 'Default Deny',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 2,
+        decision: 'DENY',
+        ruleMatched: 'Rule 3: DEFAULT IMPLICIT DENY',
+        whatIsHappening: 'Port 22 fails all allow rules. Hits the default Implicit Deny rule.',
+        interviewTakeaway: 'Traffic that fails all permit statements falls through to default deny.'
+      },
+      {
+        id: 17,
+        label: 'Firewall Blocks & Drops Packet Visibly',
+        badge: '✕ BLOCKED AT FW',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52411, dstPort: 22, protocol: 'TCP', flags: 'SYN' },
+        decision: 'DROP',
+        whatIsHappening: 'Packet is visibly stopped and blocked at the firewall. It cannot pass.',
+        interviewTakeaway: 'Blocked packets are halted and dropped at the security perimeter.'
+      },
+      {
+        id: 18,
+        label: 'Destination Server Remains Unreachable',
+        badge: 'Server Safe',
+        activeNodes: ['firewall', 'server'],
+        decision: 'DROP',
+        whatIsHappening: 'The server receives NO packet. Final state: Blocked at firewall, server safe.',
+        interviewTakeaway: 'Firewall isolation successfully shields the server from unauthorized access.'
       }
     ]
   },
@@ -764,23 +986,119 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Candidate Packet Arrives',
-        badge: 'Packet Header',
-        activeNodes: ['multi-packet'],
-        packetInfo: { srcIp: '10.50.1.10', dstIp: '172.16.0.10', dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Packet with Source 10.50.1.10 arrives. Both Rule 1 (10.0.0.0/8) and Rule 3 (10.50.1.10/32) could match this IP.',
-        interviewTakeaway: 'Multiple rules in the policy list can technically match the same packet header.'
+        label: 'Network Topology Initialized (Client Only)',
+        badge: 'Client Origin',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Client (10.0.0.25) is ready to initiate traffic.',
+        interviewTakeaway: 'The packet lifecycle begins at the client endpoint.'
       },
       {
         id: 2,
-        label: 'Rule 1 Check (Broad Subnet Match)',
-        badge: 'Match & Stop',
-        activeNodes: ['multi-rule1'],
+        label: 'Firewall Gateway Connected',
+        badge: 'Firewall Barrier',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Firewall with 3 overlapping rules is connected to the client.',
+        interviewTakeaway: 'Multiple overlapping rules are loaded in the firewall policy.'
+      },
+      {
+        id: 3,
+        label: 'Target Server Connected',
+        badge: 'Target Server',
+        activeNodes: ['client', 'firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Destination Server (203.0.113.50:443) is connected to egress interface.',
+        interviewTakeaway: 'Topology is complete with server ready to receive authorized traffic.'
+      },
+      {
+        id: 4,
+        label: 'Candidate Packet Created (10.0.0.25)',
+        badge: 'Candidate Packet',
+        activeNodes: ['client'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet with Source 10.0.0.25 on port 443 is created.',
+        interviewTakeaway: 'This packet qualifies for Rule 1, Rule 2, and Rule 3 simultaneously.'
+      },
+      {
+        id: 5,
+        label: 'Packet Transits: Client → Firewall',
+        badge: 'In Transit',
+        activeNodes: ['client', 'firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet physically travels across the wire to the firewall.',
+        interviewTakeaway: 'Traffic arrives at firewall for policy matching.'
+      },
+      {
+        id: 6,
+        label: 'Firewall Buffers Packet & Starts Inspection',
+        badge: 'Inspection',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall holds packet and begins sequential rule evaluation.',
+        interviewTakeaway: 'Rule processing begins at Rule 1 at the top of the list.'
+      },
+      {
+        id: 7,
+        label: '3 Competing Rules Displayed in Rulebase',
+        badge: '3 Competing Rules',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Rule 1: ALLOW 10.0.0.0/24; Rule 2: DENY 10.0.0.25; Rule 3: ALLOW ANY.',
+        interviewTakeaway: 'All 3 rules match this packet, creating an order-dependent decision.'
+      },
+      {
+        id: 8,
+        label: 'Rule 1 Evaluated: Source 10.0.0.25 Matches 10.0.0.0/24',
+        badge: 'Rule 1 Matches ✓',
+        activeNodes: ['firewall'],
         activeRuleIndex: 0,
         decision: 'ALLOW',
-        ruleMatched: 'Rule 1: ALLOW 10.0.0.0/8 -> 172.16.0.10:443',
-        whatIsHappening: 'Rule 1 matches 10.50.1.10 because it falls within 10.0.0.0/8. Evaluation terminates immediately with ALLOW.',
-        interviewTakeaway: 'The firewall does not search ahead for Rule 3. First match terminates rule inspection.'
+        ruleMatched: 'Rule 1: ALLOW 10.0.0.0/24 -> Server:443',
+        whatIsHappening: 'Rule 1 matches 10.0.0.25 because it falls inside 10.0.0.0/24 subnet.',
+        interviewTakeaway: 'Rule 1 is the first rule evaluated in sequence.'
+      },
+      {
+        id: 9,
+        label: 'FIRST MATCH WINS: Processing Halts Immediately',
+        badge: 'First Match Wins',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'ALLOW',
+        ruleMatched: 'Rule 1 Winner: Evaluation STOPPED',
+        whatIsHappening: 'The firewall enforces Rule 1 immediately and terminates evaluation.',
+        interviewTakeaway: 'Firewalls NEVER check subsequent rules after finding the first match.'
+      },
+      {
+        id: 10,
+        label: 'Rules 2 & 3 Visually Disabled / Faded',
+        badge: 'Rules Faded Out',
+        activeNodes: ['firewall'],
+        decision: 'ALLOW',
+        whatIsHappening: 'Rules 2 & 3 are completely ignored and never evaluated.',
+        interviewTakeaway: 'Lower conflicting rules have zero effect on the decision.'
+      },
+      {
+        id: 11,
+        label: 'Action ALLOW: Packet Forwards to Server',
+        badge: 'Forwarding',
+        activeNodes: ['firewall', 'server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Packet physically leaves firewall and travels to destination server.',
+        interviewTakeaway: 'Permitted packet reaches destination based purely on Rule 1.'
+      },
+      {
+        id: 12,
+        label: 'Server Receives Packet Successfully',
+        badge: 'Delivered ✓',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Server receives packet. First-Match principle proved: Rule 1 ALLOW prevails.',
+        interviewTakeaway: 'First-match semantics dictate that order in the rulebase determines the verdict.'
       }
     ]
   },
@@ -988,42 +1306,181 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Private Host Sends Outbound Packet',
-        badge: 'Inside Local',
+        label: 'Private Host Initialized (192.168.1.10)',
+        badge: 'Private Local',
         activeNodes: ['nat-client'],
-        packetInfo: { srcIp: '192.168.1.50', dstIp: '93.184.216.34', srcPort: 48210, dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Internal host 192.168.1.50 sends HTTPS request. Destination is public server 93.184.216.34.',
-        interviewTakeaway: 'The packet carries private Inside Local addressing (192.168.1.50:48210).'
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Internal host 192.168.1.10 is initialized on the private RFC 1918 network segment.',
+        interviewTakeaway: 'Private IP addresses (192.168.0.0/16) cannot be directly routed across the public Internet.'
       },
       {
         id: 2,
-        label: 'NAT Gateway Translates Source IP & Port',
-        badge: 'Translation',
-        activeNodes: ['nat-router'],
-        packetInfo: { srcIp: '203.0.113.8', dstIp: '93.184.216.34', srcPort: 61005, dstPort: 443, protocol: 'TCP' },
-        natTable: [
-          { insideLocal: '192.168.1.50:48210', insideGlobal: '203.0.113.8:61005', outsideGlobal: '93.184.216.34:443', protocol: 'TCP' }
-        ],
-        whatIsHappening: 'NAT router rewrites Source IP to 203.0.113.8 and allocates port 61005. Stores mapping in NAT table.',
-        interviewTakeaway: 'The NAT table logs the binding so incoming return packets can be mapped back to the private host.'
+        label: 'NAT Gateway Established',
+        badge: 'NAT Perimeter',
+        activeNodes: ['nat-client', 'nat-router'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'NAT Router Gateway connects the private LAN to the WAN perimeter.',
+        interviewTakeaway: 'The NAT gateway bridges private and public address domains.'
       },
       {
         id: 3,
-        label: 'Server Receives & Replies to Public IP',
-        badge: 'Inside Global',
-        activeNodes: ['nat-server'],
-        packetInfo: { srcIp: '93.184.216.34', dstIp: '203.0.113.8', srcPort: 443, dstPort: 61005, protocol: 'TCP' },
-        whatIsHappening: 'Web server sees packet from 203.0.113.8:61005 and sends reply back to that public address.',
-        interviewTakeaway: 'The external server has zero visibility into the internal private 192.168.1.50 IP.'
+        label: 'Public Internet Network Connected',
+        badge: 'Public WAN',
+        activeNodes: ['nat-client', 'nat-router', 'internet'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'The public Internet / WAN zone is established on the egress side of the NAT router.',
+        interviewTakeaway: 'Internet routing requires globally unique public IPv4 addresses.'
       },
       {
         id: 4,
-        label: 'NAT Gateway Reverse-Translates to Host',
-        badge: 'De-NAT',
+        label: 'Remote Web Server Connected',
+        badge: 'Web Server',
+        activeNodes: ['nat-client', 'nat-router', 'internet', 'nat-server'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Remote Destination Server (198.51.100.20:443) is connected to the public WAN.',
+        interviewTakeaway: 'The complete physical path from private client to public server is online.'
+      },
+      {
+        id: 5,
+        label: 'Outbound Packet Created (Private 5-Tuple)',
+        badge: 'Outbound SYN',
+        activeNodes: ['nat-client'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Client creates an outbound TCP SYN packet with Inside Local source: 192.168.1.10:5001.',
+        interviewTakeaway: 'Outbound packets carry RFC 1918 private source IP and ephemeral port.'
+      },
+      {
+        id: 6,
+        label: 'Outbound Packet Transits: Client → NAT',
+        badge: 'Private Transit',
+        activeNodes: ['nat-client', 'nat-router'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        whatIsHappening: 'Packet travels across the internal network towards the NAT Gateway.',
+        interviewTakeaway: 'Traffic in transit retains its private source IP inside the perimeter.'
+      },
+      {
+        id: 7,
+        label: 'NAT Gateway Receives Private Packet',
+        badge: 'Inside Local',
+        activeNodes: ['nat-router'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'NAT gateway inspects private source 192.168.1.10:5001 before egress.',
+        interviewTakeaway: 'The NAT router prepares to map the private session into a public IP.'
+      },
+      {
+        id: 8,
+        label: 'NAT Translation Table Session Created',
+        badge: 'NAT Table Entry',
+        activeNodes: ['nat-router'],
+        natTable: [
+          { insideLocal: '192.168.1.10:5001', insideGlobal: '203.0.113.10:5001', outsideGlobal: '198.51.100.20:443', protocol: 'TCP' }
+        ],
+        decision: 'TRANSLATE',
+        whatIsHappening: 'NAT Table allocates Inside Global public IP 203.0.113.10:5001 for this session.',
+        interviewTakeaway: 'The NAT table logs the binding so return traffic can be mapped back accurately.'
+      },
+      {
+        id: 9,
+        label: 'Source IP Translated: 192.168.1.10 → 203.0.113.10',
+        badge: 'SNAT Applied ✓',
+        activeNodes: ['nat-router'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'NAT gateway rewrites Source IP header to public 203.0.113.10:5001.',
+        interviewTakeaway: 'Source NAT (SNAT) replaces the private IP with the routable public IP.'
+      },
+      {
+        id: 10,
+        label: 'Translated Packet Transits: NAT → Internet',
+        badge: 'Public Transit',
+        activeNodes: ['nat-router', 'internet'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Translated packet with public IP 203.0.113.10 travels across the Internet.',
+        interviewTakeaway: 'Only public IPs are visible to outside transit routers.'
+      },
+      {
+        id: 11,
+        label: 'Packet Reaches Remote Web Server',
+        badge: 'Ingress at Server',
+        activeNodes: ['internet', 'nat-server'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Packet reaches the web server. The server sees the source as public IP 203.0.113.10.',
+        interviewTakeaway: 'Internal private topology is completely shielded from the web server.'
+      },
+      {
+        id: 12,
+        label: 'Server Receives Request (Outbound Trip Complete)',
+        badge: 'Request Received ✓',
+        activeNodes: ['nat-server'],
+        packetInfo: { srcIp: '203.0.113.10', dstIp: '198.51.100.20', srcPort: 5001, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Web server processes SYN request and prepares TCP SYN-ACK reply.',
+        interviewTakeaway: 'Outbound flow successfully completed with full network obfuscation.'
+      },
+      {
+        id: 13,
+        label: 'Server Sends Return Reply Packet',
+        badge: 'Reply Created',
+        activeNodes: ['nat-server'],
+        packetInfo: { srcIp: '198.51.100.20', dstIp: '203.0.113.10', srcPort: 443, dstPort: 5001, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Web server sends reply addressed to destination: 203.0.113.10:5001.',
+        interviewTakeaway: 'Return traffic is addressed to the NAT gateway’s public IP.'
+      },
+      {
+        id: 14,
+        label: 'Return Packet Transits: Server → Internet',
+        badge: 'Return Transit',
+        activeNodes: ['nat-server', 'internet'],
+        packetInfo: { srcIp: '198.51.100.20', dstIp: '203.0.113.10', srcPort: 443, dstPort: 5001, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Reply packet travels across the public Internet towards the NAT gateway.',
+        interviewTakeaway: 'Public routing delivers the response to the perimeter gateway.'
+      },
+      {
+        id: 15,
+        label: 'Return Packet Reaches NAT Gateway',
+        badge: 'NAT Ingress',
+        activeNodes: ['nat-router'],
+        packetInfo: { srcIp: '198.51.100.20', dstIp: '203.0.113.10', srcPort: 443, dstPort: 5001, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'INSPECT',
+        whatIsHappening: 'NAT Gateway intercepts incoming response on port 5001.',
+        interviewTakeaway: 'Perimeter gateway receives the return packet for destination de-NAT.'
+      },
+      {
+        id: 16,
+        label: 'NAT Table Lookup: Reverse De-NAT Translation',
+        badge: 'De-NAT Lookup',
+        activeNodes: ['nat-router'],
+        natTable: [
+          { insideLocal: '192.168.1.10:5001', insideGlobal: '203.0.113.10:5001', outsideGlobal: '198.51.100.20:443', protocol: 'TCP' }
+        ],
+        decision: 'TRANSLATE',
+        whatIsHappening: 'NAT gateway matches port 5001 in NAT table and rewrites Destination to 192.168.1.10:5001.',
+        interviewTakeaway: 'Reverse translation redirects the packet to the original private host.'
+      },
+      {
+        id: 17,
+        label: 'Response Packet Transits: NAT → Client',
+        badge: 'Private Inbound',
         activeNodes: ['nat-router', 'nat-client'],
-        packetInfo: { srcIp: '93.184.216.34', dstIp: '192.168.1.50', srcPort: 443, dstPort: 48210, protocol: 'TCP' },
-        whatIsHappening: 'NAT router receives reply on port 61005, looks up NAT table, rewrites Destination to 192.168.1.50:48210, and delivers to laptop.',
-        interviewTakeaway: 'Bidirectional translation completes transparently from the user’s perspective.'
+        packetInfo: { srcIp: '198.51.100.20', dstIp: '192.168.1.10', srcPort: 443, dstPort: 5001, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'De-NATed packet travels across local network to internal host 192.168.1.10.',
+        interviewTakeaway: 'Local switching delivers the frame to the initiating endpoint.'
+      },
+      {
+        id: 18,
+        label: 'Client Receives Response (Full Round-Trip Complete)',
+        badge: 'Round-Trip Complete ✓',
+        activeNodes: ['nat-client'],
+        packetInfo: { srcIp: '198.51.100.20', dstIp: '192.168.1.10', srcPort: 443, dstPort: 5001, protocol: 'TCP', flags: 'SYN-ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Client receives SYN-ACK response seamlessly. NAT round-trip successful!',
+        interviewTakeaway: 'Full round trip: Private Client ↔ NAT Gateway ↔ Internet ↔ Remote Server.'
       }
     ]
   },
@@ -1078,39 +1535,158 @@ export const QUESTIONS_DATA: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: '1. Static NAT: Permanent 1-to-1 Mapping',
-        badge: 'Static NAT (1:1)',
+        label: 'Static NAT: Internal Server Initialized (10.0.0.10)',
+        badge: 'Static (1:1)',
         activeNodes: ['nat-static'],
         packetInfo: { srcIp: '10.0.0.10', dstIp: '198.51.100.2', srcPort: 443, dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Internal DMZ Server 10.0.0.10 is permanently bound to dedicated Public IP 203.0.113.20. Inbound and outbound connections always map to this single address.',
-        interviewTakeaway: 'Static NAT is mandatory for hosting public-facing servers (Web, Mail, DNS) that require predictable inbound routing.'
+        whatIsHappening: 'Internal DMZ Server 10.0.0.10 is initialized for hosting public services.',
+        interviewTakeaway: 'Static NAT is designed for servers requiring consistent reachability.'
       },
       {
         id: 2,
-        label: '2. Dynamic NAT: Dynamic IP Pool Allocation',
-        badge: 'Dynamic NAT (M:N)',
-        activeNodes: ['nat-dynamic'],
-        packetInfo: { srcIp: '10.0.1.15', dstIp: '198.51.100.2', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
-        whatIsHappening: 'Internal host 10.0.1.15 checks out a temporary public IP from a pool of 203.0.113.50-203.0.113.60. When the pool is exhausted, new hosts must wait.',
-        interviewTakeaway: 'Dynamic NAT does not conserve addresses well because each active internal host consumes a full public IPv4 address.'
+        label: 'Static NAT: Gateway & Public Destination Connected',
+        badge: 'Dedicated Public IP',
+        activeNodes: ['nat-static'],
+        packetInfo: { srcIp: '10.0.0.10', dstIp: '198.51.100.2', srcPort: 443, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: 'Static NAT Gateway binds permanent Public IP 203.0.113.20 to internal 10.0.0.10.',
+        interviewTakeaway: 'Static NAT provides permanent 1-to-1 bidirectional mapping.'
       },
       {
         id: 3,
-        label: '3. PAT / NAT Overload: Port Multiplexing',
-        badge: 'PAT (Many:1)',
-        activeNodes: ['nat-pat'],
-        packetInfo: { srcIp: '192.168.1.10', dstIp: '93.184.216.34', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
-        whatIsHappening: 'Thousands of internal workstations share one public IP (203.0.113.1) by tracking unique 16-bit source ports (e.g., Host A: 61001, Host B: 61002).',
-        interviewTakeaway: 'PAT is the standard mechanism in enterprise egress and home routers, supporting up to ~64,000 concurrent sessions per IP.'
+        label: 'Static NAT: Dedicated 1:1 Mapping (10.0.0.10 ↔ 203.0.113.20)',
+        badge: 'Fixed 1:1 Map',
+        activeNodes: ['nat-static'],
+        natTable: [{ insideLocal: '10.0.0.10', insideGlobal: '203.0.113.20', outsideGlobal: '198.51.100.2:443', protocol: 'TCP' }],
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Static mapping table entry is permanent and never expires.',
+        interviewTakeaway: 'Both inbound and outbound connections always use this dedicated public IP.'
       },
       {
         id: 4,
-        label: '4. DNAT / Port Forwarding: Inbound Redirection',
-        badge: 'Destination NAT',
+        label: 'Static NAT: Packet Moves & 1:1 Translation Delivers to Server',
+        badge: 'Static Complete ✓',
+        activeNodes: ['nat-static'],
+        packetInfo: { srcIp: '203.0.113.20', dstIp: '198.51.100.2', srcPort: 443, dstPort: 443, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Packet translates to 203.0.113.20 and delivers to server. Static NAT complete!',
+        interviewTakeaway: 'Static NAT is mandatory for hosting public-facing web/mail/DNS servers.'
+      },
+      {
+        id: 5,
+        label: 'Dynamic NAT: Private Client & Public IP Pool Connected',
+        badge: 'Dynamic Pool (M:N)',
+        activeNodes: ['nat-dynamic'],
+        packetInfo: { srcIp: '10.0.1.15', dstIp: '198.51.100.2', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        whatIsHappening: 'Internal host 10.0.1.15 connects to NAT router with public IP pool: 203.0.113.50 - 203.0.113.60.',
+        interviewTakeaway: 'Dynamic NAT uses a pool of public IPs on a first-come, first-served basis.'
+      },
+      {
+        id: 6,
+        label: 'Dynamic NAT: Packet Transits to NAT Gateway',
+        badge: 'Pool Allocation',
+        activeNodes: ['nat-dynamic'],
+        packetInfo: { srcIp: '10.0.1.15', dstIp: '198.51.100.2', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Packet reaches NAT gateway requesting an available public IP from pool.',
+        interviewTakeaway: 'If the IP pool is exhausted, new connections are blocked until sessions close.'
+      },
+      {
+        id: 7,
+        label: 'Dynamic NAT: NAT Allocates Available Public IP (203.0.113.51)',
+        badge: 'IP Allocated ✓',
+        activeNodes: ['nat-dynamic'],
+        packetInfo: { srcIp: '203.0.113.51', dstIp: '198.51.100.2', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'NAT allocates next available IP 203.0.113.51 to host 10.0.1.15.',
+        interviewTakeaway: 'Dynamic NAT assigns a dedicated public IP for the active session duration.'
+      },
+      {
+        id: 8,
+        label: 'Dynamic NAT: Translated Packet Delivered to Destination Server',
+        badge: 'Dynamic Complete ✓',
+        activeNodes: ['nat-dynamic'],
+        packetInfo: { srcIp: '203.0.113.51', dstIp: '198.51.100.2', srcPort: 52100, dstPort: 80, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Translated packet delivers to destination. Dynamic NAT process complete!',
+        interviewTakeaway: 'Dynamic NAT does not conserve IPv4 well because each host consumes a full IP.'
+      },
+      {
+        id: 9,
+        label: 'PAT (Overload): 3 Internal Clients Initialized with Unique Ports',
+        badge: 'PAT (Many:1)',
+        activeNodes: ['nat-pat'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '93.184.216.34', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        whatIsHappening: '3 private clients (192.168.1.10:5001, 1.11:5002, 1.12:5003) initiate web requests.',
+        interviewTakeaway: 'Port Address Translation (PAT) maps multiple private IPs to ONE public IP using unique ports.'
+      },
+      {
+        id: 10,
+        label: 'PAT: Packets Transit to NAT Gateway',
+        badge: 'Port Multiplexing',
+        activeNodes: ['nat-pat'],
+        packetInfo: { srcIp: '192.168.1.10', dstIp: '93.184.216.34', srcPort: 5001, dstPort: 443, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'All 3 clients send packets simultaneously to the PAT gateway.',
+        interviewTakeaway: 'PAT multiplexes thousands of sessions onto a single public IP.'
+      },
+      {
+        id: 11,
+        label: 'PAT: Single Public IP (203.0.113.1) Multiplexed Across Unique Ports',
+        badge: 'Unique Ports Mapped',
+        activeNodes: ['nat-pat'],
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '93.184.216.34', srcPort: 61001, dstPort: 443, protocol: 'TCP' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Host 1 → 203.0.113.1:61001; Host 2 → 203.0.113.1:61002; Host 3 → 203.0.113.1:61003.',
+        interviewTakeaway: 'Layer 4 port numbers distinguish sessions belonging to different internal hosts.'
+      },
+      {
+        id: 12,
+        label: 'PAT: Multiplexed Packets Forwarded to Internet Destination',
+        badge: 'PAT Complete ✓',
+        activeNodes: ['nat-pat'],
+        packetInfo: { srcIp: '203.0.113.1', dstIp: '93.184.216.34', srcPort: 61001, dstPort: 443, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'All 3 packets transit out onto the Internet sharing one IP. PAT complete!',
+        interviewTakeaway: 'PAT powers 99% of home and enterprise egress gateways worldwide.'
+      },
+      {
+        id: 13,
+        label: 'DNAT: External Client Sends Inbound Request (203.0.113.50:80)',
+        badge: 'Inbound DNAT',
         activeNodes: ['nat-dnat'],
         packetInfo: { srcIp: '198.51.100.99', dstIp: '203.0.113.50', srcPort: 49200, dstPort: 80, protocol: 'TCP' },
-        whatIsHappening: 'External Internet user hits public IP 203.0.113.50 on port 80. Gateway rewrites Destination IP to internal web server 10.0.2.80:8080.',
-        interviewTakeaway: 'DNAT exposes internal private services to the public Internet without giving the backend server a public IP.'
+        whatIsHappening: 'External Internet client connects to public IP 203.0.113.50 on port 80.',
+        interviewTakeaway: 'Destination NAT (DNAT / Port Forwarding) handles inbound traffic to internal servers.'
+      },
+      {
+        id: 14,
+        label: 'DNAT: Inbound Packet Transits to Gateway',
+        badge: 'Dest Rewrite Check',
+        activeNodes: ['nat-dnat'],
+        packetInfo: { srcIp: '198.51.100.99', dstIp: '203.0.113.50', srcPort: 49200, dstPort: 80, protocol: 'TCP' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Packet reaches gateway ingress where port forwarding rules are evaluated.',
+        interviewTakeaway: 'DNAT occurs in PREROUTING before the routing decision.'
+      },
+      {
+        id: 15,
+        label: 'DNAT: Destination Rewritten to Internal Web Server (10.0.2.80:8080)',
+        badge: 'Rewritten to Private',
+        activeNodes: ['nat-dnat'],
+        packetInfo: { srcIp: '198.51.100.99', dstIp: '10.0.2.80', srcPort: 49200, dstPort: 8080, protocol: 'TCP' },
+        decision: 'TRANSLATE',
+        whatIsHappening: 'Gateway rewrites Destination IP:Port to private server 10.0.2.80:8080.',
+        interviewTakeaway: 'External clients access internal services without knowing internal IP architecture.'
+      },
+      {
+        id: 16,
+        label: 'DNAT: Delivered to Internal Server — Complete 4-Flavor Comparison',
+        badge: 'All 4 NAT Types Complete ✓',
+        activeNodes: ['nat-dnat'],
+        packetInfo: { srcIp: '198.51.100.99', dstIp: '10.0.2.80', srcPort: 49200, dstPort: 8080, protocol: 'TCP' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Internal server receives the forwarded packet. Full 4-type comparison complete!',
+        interviewTakeaway: 'Summary: Static (1:1), Dynamic (Pool), PAT (Ports Overload), DNAT (Port Forwarding).'
       }
     ]
   },
