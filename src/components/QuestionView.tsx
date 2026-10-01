@@ -126,12 +126,12 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
   const isRuleQuestion = question.visualType.includes('rule') || question.visualType.includes('scenario') || question.visualType.includes('implicit');
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12">
+    <div className="space-y-4 sm:space-y-6 animate-fadeIn max-w-5xl mx-auto pb-12 w-full">
       
       {/* Top Breadcrumb & Metadata Header */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2 text-xs font-semibold flex-wrap">
             <span className="rounded-md bg-blue-50 border border-blue-200 px-2.5 py-1 text-blue-700">
               {question.category}
             </span>
@@ -141,28 +141,28 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end xs:self-auto shrink-0">
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer active:scale-95"
               title="Copy question direct link"
             >
               {copiedLink ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  <span className="text-emerald-700">Link Copied</span>
+                  <span className="text-emerald-700">Copied</span>
                 </>
               ) : (
                 <>
                   <Share2 className="h-3.5 w-3.5 text-slate-500" />
-                  <span className="hidden sm:inline">Share</span>
+                  <span>Share</span>
                 </>
               )}
             </button>
 
             <button
               onClick={handleCompleteToggle}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95 ${
                 isCompleted
                   ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs'
                   : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -174,20 +174,20 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
           </div>
         </div>
 
-        {/* Main Question Title (Matching exact bold typography from reference screenshot) */}
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        {/* Main Question Title */}
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
           {question.title}
         </h1>
-        <p className="text-sm sm:text-base text-slate-500 font-medium">
+        <p className="text-xs sm:text-sm md:text-base text-slate-500 font-medium">
           {question.subtitle}
         </p>
       </div>
 
       {/* 3 Main View Tabs: Visual Lesson | Interview Answer | Practice */}
-      <div className="flex items-center border-b border-slate-200 gap-2 sm:gap-6 pt-2">
+      <div className="flex items-center border-b border-slate-200 gap-1 sm:gap-6 pt-1 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('visual')}
-          className={`flex items-center gap-2 pb-3 px-1 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 pb-3 px-2 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'visual'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -199,7 +199,7 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
 
         <button
           onClick={() => setActiveTab('answer')}
-          className={`flex items-center gap-2 pb-3 px-1 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 pb-3 px-2 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'answer'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -211,14 +211,14 @@ export const QuestionView: React.FC<QuestionViewProps> = ({
 
         <button
           onClick={() => setActiveTab('practice')}
-          className={`flex items-center gap-2 pb-3 px-1 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-2 pb-3 px-2 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
             activeTab === 'practice'
               ? 'border-blue-600 text-blue-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
           <HelpCircle className="h-4 w-4" />
-          Practice
+          Practice quiz
           <span className="flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
         </button>
       </div>

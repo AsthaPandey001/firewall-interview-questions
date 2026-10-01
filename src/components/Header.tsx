@@ -36,16 +36,16 @@ export const Header: React.FC<HeaderProps> = ({
   setMobileMenuOpen
 }) => {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
+      <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 gap-2 sm:gap-4">
         
-        {/* Left Side: Logo & Category Navigation Tabs */}
-        <div className="flex items-center gap-6 lg:gap-8 min-w-0">
+        {/* Left Side: Mobile Hamburger, Logo & Desktop Category Navigation Tabs */}
+        <div className="flex items-center gap-2.5 sm:gap-6 lg:gap-8 min-w-0">
           
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 lg:hidden shrink-0"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 lg:hidden shrink-0 active:scale-95 transition-transform"
             aria-label="Toggle Navigation Menu"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -56,13 +56,13 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onSelectCategory('all')}
             className="flex cursor-pointer items-center gap-1 shrink-0"
           >
-            <span className="text-xl font-black tracking-tight text-slate-900">
+            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
               Net<span className="text-blue-600">Prep</span>
             </span>
           </div>
 
-          {/* Category Tabs (4-5 categories for filtering) */}
-          <nav className="hidden md:flex items-center gap-2 lg:gap-3 h-16 overflow-x-auto no-scrollbar">
+          {/* Category Tabs (Desktop: 4-5 categories for filtering) */}
+          <nav className="hidden md:flex items-center gap-2 lg:gap-3 h-14 sm:h-16 overflow-x-auto no-scrollbar">
             {HEADER_CATEGORIES.map((cat) => {
               const isActive = selectedCategory === cat.id;
               return (
@@ -91,15 +91,19 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Side: Search bar, Notification Bell */}
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           
-          {/* Clean Airy Search Input */}
+          {/* Clean Airy Search Input - Mobile Optimized */}
           <button
             onClick={onOpenSearch}
-            className="flex items-center gap-2.5 rounded-lg border border-slate-200/80 bg-slate-50/70 px-3.5 py-1.5 text-xs text-slate-400 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-600 w-36 sm:w-56 md:w-64"
+            className="flex items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-700 max-w-[130px] sm:max-w-none sm:w-52 md:w-60"
+            title="Search questions (Ctrl+K)"
           >
             <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="truncate text-left">Search questions...</span>
+            <span className="truncate text-left hidden xs:inline sm:inline">Search...</span>
+            <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+              ⌘K
+            </kbd>
           </button>
 
           {/* Notification Bell */}
@@ -112,6 +116,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         </div>
 
+      </div>
+
+      {/* Mobile Horizontal Category Tabs Bar (Visible only on mobile screens < md) */}
+      <div className="md:hidden flex items-center gap-1 px-3 py-2 border-t border-slate-100 bg-slate-50/60 overflow-x-auto no-scrollbar">
+        {HEADER_CATEGORIES.map((cat) => {
+          const isActive = selectedCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => onSelectCategory(cat.id)}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all shrink-0 cursor-pointer ${
+                isActive
+                  ? 'bg-blue-600 text-white font-bold shadow-xs'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <span>{cat.label}</span>
+              <span className={`text-[10px] font-mono px-1 rounded-full ${
+                isActive ? 'bg-blue-700/80 text-white' : 'bg-slate-100 text-slate-500'
+              }`}>
+                {cat.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </header>
   );

@@ -54,7 +54,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   const popularKeywords = ['Firewall', 'NAT', 'VPN', 'TLS', 'ACL', 'IDS vs IPS', 'Rule Order', 'Implicit Deny'];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-900/40 backdrop-blur-xs animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-20 px-2.5 sm:px-4 bg-slate-900/40 backdrop-blur-xs animate-fadeIn">
       <div 
         className="fixed inset-0"
         onClick={onClose}

@@ -52,26 +52,26 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
     <div className="space-y-6 max-w-3xl mx-auto animate-fadeIn">
       
       {/* Quiz Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-sm">
         
         {/* Quiz Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4 sm:mb-5">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
               <HelpCircle className="h-4 w-4" />
             </div>
             <div>
               <span className="text-[11px] font-bold text-blue-600 tracking-wider uppercase">
                 Interactive Practice
               </span>
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
                 Knowledge Check Challenge
               </h3>
             </div>
           </div>
 
           {isCompleted && (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 shrink-0">
               <Check className="h-3.5 w-3.5 stroke-[3] text-emerald-600" />
               Completed
             </span>
@@ -79,12 +79,12 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
         </div>
 
         {/* Question Text */}
-        <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed mb-6">
+        <p className="text-xs sm:text-base font-semibold text-slate-800 leading-relaxed mb-4 sm:mb-6">
           {quiz.question}
         </p>
 
         {/* Options List */}
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           {quiz.options.map((option, idx) => {
             const isSelected = selectedOption === idx;
             const isCorrectOption = idx === quiz.correctIndex;
@@ -108,7 +108,7 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
                 key={idx}
                 onClick={() => !submitted && setSelectedOption(idx)}
                 disabled={submitted}
-                className={`w-full flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all text-xs sm:text-sm cursor-pointer shadow-2xs ${buttonStyle}`}
+                className={`w-full flex items-start gap-2.5 sm:gap-3 p-3 sm:p-3.5 rounded-xl border text-left transition-all text-xs sm:text-sm cursor-pointer shadow-2xs active:scale-[0.99] ${buttonStyle}`}
               >
                 <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold mt-0.5 border ${
                   submitted && isCorrectOption
@@ -134,12 +134,12 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+        <div className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
           {!submitted ? (
             <button
               onClick={handleSubmit}
               disabled={selectedOption === null}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer active:scale-95"
             >
               <Sparkles className="h-4 w-4" />
               Submit Answer
@@ -147,34 +147,34 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
           ) : (
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all cursor-pointer active:scale-95"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               Try Again
             </button>
           )}
 
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-[11px] sm:text-xs text-slate-400 font-medium">
             Question {question.id} Practice
           </span>
         </div>
 
         {/* Feedback / Explanation Box */}
         {submitted && (
-          <div className={`mt-5 p-4 rounded-xl border animate-fadeIn ${
+          <div className={`mt-4 sm:mt-5 p-3.5 sm:p-4 rounded-xl border animate-fadeIn ${
             isCorrect 
               ? 'border-emerald-200 bg-emerald-50 text-emerald-950' 
               : 'border-rose-200 bg-rose-50 text-rose-950'
           }`}>
-            <div className="flex items-center gap-2 mb-1.5 font-bold text-sm">
+            <div className="flex items-center gap-2 mb-1.5 font-bold text-xs sm:text-sm">
               {isCorrect ? (
                 <>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   <span>Correct! Outstanding reasoning.</span>
                 </>
               ) : (
                 <>
-                  <XCircle className="h-4 w-4 text-rose-600" />
+                  <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
                   <span>Incorrect. Review the detailed explanation:</span>
                 </>
               )}

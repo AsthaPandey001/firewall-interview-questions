@@ -84,21 +84,21 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
   };
 
   return (
-    <div className="relative w-full bg-white rounded-t-2xl flex flex-col justify-between overflow-hidden min-h-[460px]">
+    <div className="relative w-full bg-white rounded-t-2xl flex flex-col justify-between overflow-hidden min-h-[360px] sm:min-h-[460px]">
       {/* Top Visual Canvas Header Strip (Small step indicator + short label) */}
-      <div className="px-5 pt-4 pb-2.5 border-b border-slate-100 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold font-mono">
+      <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-2.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-white">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[11px] sm:text-xs font-bold font-mono shrink-0">
             <span>STEP {currentStepIndex + 1} / {totalSteps}</span>
           </div>
-          <h2 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
+          <h2 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight truncate">
             {step.label}
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {step.badge && (
-            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-mono font-semibold text-slate-600">
+            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] sm:text-[11px] font-mono font-semibold text-slate-600">
               {step.badge}
             </span>
           )}
@@ -106,8 +106,10 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
       </div>
 
       {/* Main Progressive Visual Stage Canvas */}
-      <div className="flex-1 w-full relative p-3 sm:p-4 flex items-center justify-center min-h-[340px] bg-slate-50/40">
-        {renderVisualizer()}
+      <div className="flex-1 w-full relative p-2 sm:p-4 flex items-center justify-center min-h-[260px] sm:min-h-[340px] bg-slate-50/40 overflow-hidden">
+        <div className="w-full h-full flex items-center justify-center max-w-full">
+          {renderVisualizer()}
+        </div>
       </div>
     </div>
   );
