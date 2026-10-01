@@ -250,8 +250,8 @@ export const FirewallRuleSimulator: React.FC<FirewallRuleSimulatorProps> = ({
           </div>
         </div>
 
-        {/* Nodes & Packet Animation Track */}
-        <div className="relative my-6 sm:my-8 flex items-center justify-between px-2 sm:px-12">
+        {/* Desktop Nodes & Packet Animation Track (Horizontal) */}
+        <div className="relative my-6 sm:my-8 hidden sm:flex items-center justify-between px-2 sm:px-12">
           
           {/* Connection Line Behind Nodes */}
           <div className="absolute left-6 right-6 sm:left-8 sm:right-8 top-1/2 -translate-y-1/2 h-1 bg-slate-200 z-0">
@@ -308,7 +308,7 @@ export const FirewallRuleSimulator: React.FC<FirewallRuleSimulatorProps> = ({
             <span className="text-[10px] sm:text-[11px] font-mono text-slate-500 font-semibold truncate max-w-[90px] text-center">:{customPort}</span>
           </div>
 
-          {/* Moving Animated Packet Badge */}
+          {/* Moving Animated Packet Badge (Horizontal) */}
           {isSimulating && (
             <div 
               className="absolute top-1/2 -translate-y-1/2 z-20 transition-all duration-500 ease-out"
@@ -316,6 +316,105 @@ export const FirewallRuleSimulator: React.FC<FirewallRuleSimulatorProps> = ({
             >
               <div className="flex items-center gap-1 rounded-full bg-blue-600 px-2 sm:px-3 py-0.5 sm:py-1 shadow-md text-white font-mono text-[9px] sm:text-[10px] font-bold ring-2 ring-blue-300 -translate-x-1/2 -translate-y-8 animate-bounce">
                 <span>[{customProto}:{customPort}]</span>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Mobile Nodes & Packet Animation Track (Vertical Top-to-Bottom Flow) */}
+        <div className="relative my-4 sm:hidden flex flex-col items-center justify-between min-h-[300px] py-2 px-2">
+          
+          {/* Vertical Connection Line Behind Nodes */}
+          <div className="absolute top-7 bottom-7 left-1/2 -translate-x-1/2 w-1.5 bg-slate-200 z-0 rounded-full overflow-hidden">
+            <div 
+              className={`w-full transition-all duration-700 ${
+                simulationResult?.decision === 'ALLOW' 
+                  ? 'bg-emerald-500 shadow-sm'
+                  : simulationResult?.decision === 'DENY'
+                  ? 'bg-rose-500 shadow-sm'
+                  : 'bg-blue-500'
+              }`}
+              style={{ height: `${Math.max(10, packetPositionPercent)}%` }}
+            />
+          </div>
+
+          {/* Node 1: Client Host (Top) */}
+          <div className="relative z-10 w-full max-w-[260px] flex items-center justify-between bg-white border-2 border-blue-500 rounded-xl p-2.5 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <Laptop className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <span className="block text-xs font-bold text-slate-800">Source Host</span>
+                <span className="text-[10px] font-mono text-blue-600 font-semibold">{customIp}</span>
+              </div>
+            </div>
+            <span className="text-[9px] font-mono font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+              TOP (SRC)
+            </span>
+          </div>
+
+          {/* Node 2: Firewall Inspection Engine (Middle) */}
+          <div className={`relative z-10 w-full max-w-[260px] flex items-center justify-between rounded-xl p-2.5 border-2 transition-all shadow-sm ${
+            evaluatingRuleIndex !== null
+              ? 'bg-blue-50 border-blue-600 text-blue-700 scale-105 shadow-blue-500/20'
+              : simulationResult?.decision === 'ALLOW'
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+              : simulationResult?.decision === 'DENY'
+              ? 'bg-rose-50 border-rose-500 text-rose-700'
+              : 'bg-white border-slate-300 text-slate-700'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                evaluatingRuleIndex !== null ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
+              }`}>
+                <Shield className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <span className="block text-xs font-bold text-slate-800">Firewall Engine</span>
+                <span className="text-[10px] font-mono text-slate-600 font-semibold">
+                  {evaluatingRuleIndex !== null ? `Evaluating Rule #${evaluatingRuleIndex + 1}` : 'First Match Inspector'}
+                </span>
+              </div>
+            </div>
+            <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+              simulationResult?.decision === 'ALLOW' ? 'bg-emerald-100 text-emerald-800' :
+              simulationResult?.decision === 'DENY' ? 'bg-rose-100 text-rose-800' :
+              'bg-slate-100 text-slate-600'
+            }`}>
+              {simulationResult?.decision || 'MIDDLE'}
+            </span>
+          </div>
+
+          {/* Node 3: Target Server (Bottom) */}
+          <div className={`relative z-10 w-full max-w-[260px] flex items-center justify-between rounded-xl p-2.5 border-2 transition-all shadow-sm ${
+            simulationResult?.decision === 'ALLOW'
+              ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+              : 'bg-white border-slate-300 text-slate-600'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Server className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <span className="block text-xs font-bold text-slate-800">Target Server</span>
+                <span className="text-[10px] font-mono text-slate-500 font-semibold">Port :{customPort}</span>
+              </div>
+            </div>
+            <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+              BOTTOM (DST)
+            </span>
+          </div>
+
+          {/* Moving Animated Packet Badge (Vertical Top-to-Bottom) */}
+          {isSimulating && (
+            <div 
+              className="absolute left-1/2 -translate-x-1/2 z-20 transition-all duration-500 ease-out pointer-events-none"
+              style={{ top: `${Math.min(85, Math.max(12, packetPositionPercent))}%` }}
+            >
+              <div className="flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 shadow-lg text-white font-mono text-[9px] font-bold ring-2 ring-blue-300 translate-x-12 animate-bounce">
+                <span>↓ [{customProto}:{customPort}]</span>
               </div>
             </div>
           )}

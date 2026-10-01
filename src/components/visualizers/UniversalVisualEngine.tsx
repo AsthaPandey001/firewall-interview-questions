@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { QuestionData } from '../../types';
+import { Smartphone, Monitor } from 'lucide-react';
+import { MobileVerticalVisualizer } from './MobileVerticalVisualizer';
 
 // Import all 20 dedicated visualizer components
 import { Q1FirewallFlowVisualizer } from './Q1FirewallFlowVisualizer';
@@ -32,7 +34,9 @@ interface UniversalVisualEngineProps {
 export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
   question,
   currentStepIndex,
+  onOpenSandbox,
 }) => {
+  const [viewOrientation, setViewOrientation] = useState<'auto' | 'vertical' | 'horizontal'>('auto');
   const step = question.steps[currentStepIndex] || question.steps[0];
   const totalSteps = question.steps.length;
 
@@ -97,8 +101,36 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* Orientation Toggle Button */}
+          <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-[10px] font-mono">
+            <button
+              onClick={() => setViewOrientation('vertical')}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                viewOrientation === 'vertical' || viewOrientation === 'auto'
+                  ? 'sm:hidden bg-white text-blue-700 font-bold shadow-2xs'
+                  : ''
+              } ${viewOrientation === 'vertical' ? 'bg-white text-blue-700 font-bold shadow-2xs' : 'text-slate-600'}`}
+              title="Vertical Mobile View"
+            >
+              <Smartphone className="h-3 w-3" />
+              <span>Vertical</span>
+            </button>
+            <button
+              onClick={() => setViewOrientation('horizontal')}
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                viewOrientation === 'horizontal' || viewOrientation === 'auto'
+                  ? 'hidden sm:flex bg-white text-blue-700 font-bold shadow-2xs'
+                  : ''
+              } ${viewOrientation === 'horizontal' ? 'bg-white text-blue-700 font-bold shadow-2xs' : 'text-slate-600'}`}
+              title="Wide Desktop View"
+            >
+              <Monitor className="h-3 w-3" />
+              <span>Canvas</span>
+            </button>
+          </div>
+
           {step.badge && (
-            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] sm:text-[11px] font-mono font-semibold text-slate-600">
+            <span className="hidden xs:inline-block px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[10px] sm:text-[11px] font-mono font-semibold text-slate-600">
               {step.badge}
             </span>
           )}
@@ -107,9 +139,25 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
 
       {/* Main Progressive Visual Stage Canvas */}
       <div className="flex-1 w-full relative p-2 sm:p-4 flex items-center justify-center min-h-[260px] sm:min-h-[340px] bg-slate-50/40 overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center max-w-full">
+        
+        {/* Render Mobile Vertical Visualizer (Default on mobile screens) */}
+        <div className={`w-full ${viewOrientation === 'vertical' ? 'block' : viewOrientation === 'horizontal' ? 'hidden' : 'block sm:hidden'}`}>
+          <MobileVerticalVisualizer
+            question={question}
+            currentStepIndex={currentStepIndex}
+            step={step}
+            totalSteps={totalSteps}
+            onOpenSandbox={onOpenSandbox}
+          />
+        </div>
+
+        {/* Render Wide Desktop Horizontal Visualizer (Default on larger screens) */}
+        <div className={`w-full h-full flex items-center justify-center max-w-full ${
+          viewOrientation === 'horizontal' ? 'flex' : viewOrientation === 'vertical' ? 'hidden' : 'hidden sm:flex'
+        }`}>
           {renderVisualizer()}
         </div>
+
       </div>
     </div>
   );
