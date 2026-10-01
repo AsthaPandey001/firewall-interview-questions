@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_1px_2px_0_rgba(0,0,0,0.03)]">
       <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 gap-2 sm:gap-4">
         
-        {/* Left Side: Mobile Hamburger, Logo & Desktop Category Navigation Tabs */}
+        {/* Left Side: Mobile Hamburger & Desktop Category Navigation Tabs */}
         <div className="flex items-center gap-2.5 sm:gap-6 lg:gap-8 min-w-0">
           
           {/* Mobile menu button */}
@@ -50,16 +50,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-
-          {/* Logo */}
-          <div 
-            onClick={() => onSelectCategory('all')}
-            className="flex cursor-pointer items-center gap-1 shrink-0"
-          >
-            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
-              Net<span className="text-blue-600">Prep</span>
-            </span>
-          </div>
 
           {/* Category Tabs (Desktop: 4-5 categories for filtering) */}
           <nav className="hidden md:flex items-center gap-2 lg:gap-3 h-14 sm:h-16 overflow-x-auto no-scrollbar">
@@ -90,29 +80,42 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
         </div>
 
-        {/* Right Side: Search bar, Notification Bell (Desktop only) */}
-        <div className="hidden sm:flex items-center gap-1.5 sm:gap-3 shrink-0">
+        {/* Right Side: Search bar, Notification Bell & NetPrep Logo on the Right Corner */}
+        <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
           
-          {/* Clean Airy Search Input */}
-          <button
-            onClick={onOpenSearch}
-            className="flex items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-700 max-w-[130px] sm:max-w-none sm:w-52 md:w-60 cursor-pointer"
-            title="Search questions (Ctrl+K)"
-          >
-            <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="truncate text-left">Search...</span>
-            <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
-              ⌘K
-            </kbd>
-          </button>
+          {/* Desktop Search bar & Bell */}
+          <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+            {/* Clean Airy Search Input */}
+            <button
+              onClick={onOpenSearch}
+              className="flex items-center gap-2 rounded-lg border border-slate-200/90 bg-slate-50/80 px-2.5 sm:px-3.5 py-1.5 text-xs text-slate-500 transition-all hover:border-slate-300 hover:bg-white hover:text-slate-700 max-w-[130px] sm:max-w-none sm:w-52 md:w-60 cursor-pointer"
+              title="Search questions (Ctrl+K)"
+            >
+              <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="truncate text-left">Search...</span>
+              <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
+                ⌘K
+              </kbd>
+            </button>
 
-          {/* Notification Bell */}
-          <button 
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            aria-label="Notifications"
+            {/* Notification Bell */}
+            <button 
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* NetPrep Logo (Right-hand Corner) */}
+          <div 
+            onClick={() => onSelectCategory('all')}
+            className="flex cursor-pointer items-center gap-1 shrink-0 pl-1"
           >
-            <Bell className="h-4 w-4" />
-          </button>
+            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
+              Net<span className="text-blue-600">Prep</span>
+            </span>
+          </div>
 
         </div>
 
