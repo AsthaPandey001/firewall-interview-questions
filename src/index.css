@@ -115,11 +115,63 @@
   }
   100% {
     transform: scale(2);
-  }
-  100% {
-    transform: scale(2);
     opacity: 0;
   }
+}
+
+@keyframes laser-sweep {
+  0% {
+    top: 15%;
+    opacity: 0.3;
+  }
+  50% {
+    top: 75%;
+    opacity: 1;
+  }
+  100% {
+    top: 15%;
+    opacity: 0.3;
+  }
+}
+
+@keyframes photon-flow {
+  0% {
+    stroke-dashoffset: 60;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes hardware-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4), 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0), 0 8px 24px rgba(37, 99, 235, 0.25);
+  }
+}
+
+@keyframes metallic-gleam {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-laser-sweep {
+  animation: laser-sweep 2s ease-in-out infinite;
+}
+
+.animate-photon-flow {
+  stroke-dasharray: 6 6;
+  animation: photon-flow 0.8s linear infinite;
+}
+
+.animate-hardware-pulse {
+  animation: hardware-pulse 2.2s infinite ease-in-out;
 }
 
 .animate-pulse-glow {
