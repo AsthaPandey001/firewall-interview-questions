@@ -25,13 +25,14 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
   const [submitted, setSubmitted] = useState(false);
 
   const quiz = question.quiz;
-  const isCorrect = selectedOption === quiz.correctIndex;
+  const correctIndex = typeof quiz.correctIndex === 'number' ? quiz.correctIndex : (typeof quiz.correctAnswer === 'number' ? quiz.correctAnswer : 0);
+  const isCorrect = selectedOption === correctIndex;
 
   const handleSubmit = () => {
     if (selectedOption === null) return;
     setSubmitted(true);
 
-    if (selectedOption === quiz.correctIndex) {
+    if (selectedOption === correctIndex) {
       onMarkCompleted(question.id);
       try {
         confetti({
@@ -87,7 +88,7 @@ export const PracticeQuizTab: React.FC<PracticeQuizTabProps> = ({
         <div className="space-y-2.5 sm:space-y-3">
           {quiz.options.map((option, idx) => {
             const isSelected = selectedOption === idx;
-            const isCorrectOption = idx === quiz.correctIndex;
+            const isCorrectOption = idx === correctIndex;
             
             let buttonStyle = 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100';
             

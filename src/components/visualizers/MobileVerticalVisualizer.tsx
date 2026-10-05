@@ -40,15 +40,12 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
   const packet2Ref = useRef<HTMLDivElement>(null);
   const targetRef = useRef<HTMLDivElement>(null);
 
-  // Progressive visibility thresholds based on currentStepIndex:
-  // Step 0: ONLY Source Host is visible
-  // Step 1+: Packet 1 & Gateway appear
-  // Later steps: Delivery connector & Target Server appear
+  // Baseline topology is always established so the architecture is 100% stable & clear
   const showSource = true;
   const showPacket1 = currentStepIndex >= 1;
-  const showGateway = currentStepIndex >= 1;
-  const showPacket2 = currentStepIndex >= 2 && currentStepIndex >= Math.floor(totalSteps * 0.45);
-  const showTarget = currentStepIndex >= 2 && currentStepIndex >= Math.floor(totalSteps * 0.55);
+  const showGateway = true;
+  const showPacket2 = currentStepIndex >= 2;
+  const showTarget = true;
 
   const isEarly = currentStepIndex <= 1;
   const isAtMiddle = currentStepIndex >= 2 && currentStepIndex < totalSteps - 2;
@@ -150,17 +147,29 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
       {/* ───────────────────────────────────────────────────────────── */}
       {/* STICKY CURRENT STEP INDICATOR PILL (Always visible on scroll) */}
       {/* ───────────────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 w-full flex items-center justify-between pb-2 mb-3 bg-white/95 backdrop-blur-xs border-b border-slate-200 px-2 text-xs">
-        <div className="flex items-center gap-1.5 font-bold text-slate-800">
-          <Radio className="h-3.5 w-3.5 text-blue-600 animate-pulse" />
-          <span className="text-[11px] truncate max-w-[170px]">
-            {isDenied ? 'PACKET BLOCKED' : isAllowed && isFinal ? 'DELIVERED TO TARGET' : isInspecting ? 'INSPECTING RULES' : 'TRANSMITTING'}
-          </span>
+      <div className="sticky top-0 z-30 w-full flex flex-col gap-1.5 pb-2 mb-3 bg-white/95 backdrop-blur-xs border-b border-slate-200 px-2 text-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800">
+            <Radio className="h-3.5 w-3.5 text-blue-600 animate-pulse" />
+            <span className="text-[11px] truncate max-w-[170px]">
+              {isDenied ? 'PACKET BLOCKED' : isAllowed && isFinal ? 'DELIVERED TO TARGET' : isInspecting ? 'INSPECTING RULES' : 'TRANSMITTING'}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
+              Step {currentStepIndex + 1} / {totalSteps}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-semibold border border-blue-200">
-            Step {currentStepIndex + 1} / {totalSteps}
+
+        {/* Direct Answer Compact Ribbon */}
+        <div className="p-2 rounded-lg bg-slate-900 text-white flex items-start gap-1.5">
+          <span className="px-1.5 py-0.5 rounded bg-blue-500/30 text-blue-300 font-mono text-[9px] font-bold uppercase shrink-0 mt-0.5">
+            Answer
           </span>
+          <p className="text-[11px] text-slate-100 font-medium leading-tight">
+            {step.interviewTakeaway || question.elevatorPitch}
+          </p>
         </div>
       </div>
 

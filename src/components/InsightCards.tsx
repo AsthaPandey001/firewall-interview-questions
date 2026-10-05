@@ -77,7 +77,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
                 <Target className="h-4 w-4" />
               </div>
               <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
-                Interview takeaway
+                To-the-Point Interview Answer
               </h3>
             </div>
 
@@ -101,13 +101,13 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
             )}
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium break-words whitespace-normal">
+          <div className="p-2.5 rounded-xl bg-indigo-50/60 border border-indigo-200/60 text-indigo-950 font-semibold text-xs sm:text-[13px] leading-relaxed mb-2">
             {currentStep.interviewTakeaway}
-          </p>
+          </div>
         </div>
 
         <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between text-[11px] text-slate-500 gap-1">
-          <span>Explain the journey in order: 5-tuple, rule match, verdict.</span>
+          <span className="font-medium text-slate-600">Key concept for technical screening & system design.</span>
           <span className="text-blue-600 font-bold cursor-pointer hover:underline" onClick={onOpenQuiz}>
             Practice challenge →
           </span>

@@ -41,7 +41,8 @@ export interface AnimationStep {
 export interface QuizQuestion {
   question: string;
   options: string[];
-  correctIndex: number;
+  correctIndex?: number;
+  correctAnswer?: number;
   explanation: string;
 }
 
@@ -56,13 +57,16 @@ export interface QuestionData {
   categoryId: string;
   category: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
+  difficulty?: string;
   visualType: string;
   elevatorPitch: string;
-  deepDive: string[];
+  deepDive: string[] | string;
   realWorldScenario: string;
-  commonTrap: string;
-  keyTakeaways: string[];
+  commonTrap?: string;
+  commonTraps?: string[] | string;
+  keyTakeaways?: string[];
+  cliSnippet?: string;
   cliSnippets?: CliSnippet[];
   quiz: QuizQuestion;
   steps: AnimationStep[];

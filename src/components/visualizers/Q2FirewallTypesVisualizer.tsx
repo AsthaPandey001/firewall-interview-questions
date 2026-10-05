@@ -50,12 +50,15 @@ export const Q2FirewallTypesVisualizer: React.FC<Props> = ({ currentStepIndex })
           {/* Baseline Connection */}
           <line x1="90" y1="95" x2="650" y2="95" stroke="#e2e8f0" strokeWidth="2.5" strokeDasharray="4 4" />
 
-          {/* MODE 0: PACKET FILTERING (Resting Topology on Step 1) */}
+          {/* MODE 0: PACKET FILTERING (Stateless Packet Header Check) */}
           {mode === 0 && (
             <>
+              <BoldArrow x1={135} y1={95} x2={325} y2={95} color="#2563eb" label="L3/L4 HEADERS" />
+              <BoldArrow x1={415} y1={95} x2={605} y2={95} color="#10b981" label="STATISTIC ALLOW" />
               <LaptopNode cx={90} cy={95} label="CLIENT" ip="10.0.0.25" active />
-              <FirewallGatewayNode cx={370} cy={95} label="PACKET FILTER" sub="Stateless L3/L4" active />
-              <ServerNodeSVG cx={650} cy={95} label="SERVER" sub="203.0.113.50:443" active />
+              <FirewallGatewayNode cx={370} cy={95} label="PACKET FILTER" sub="Stateless L3/L4" active scannerActive />
+              <ServerNodeSVG cx={650} cy={95} label="SERVER" sub="203.0.113.50:443" active success />
+              <PacketCard cx={230} cy={42} title="IP PACKET" protocol="TCP" port="443" src="10.0.0.25" dst="203.0.113.50" flags="SYN" status="INSPECT" scale={0.82} />
             </>
           )}
 

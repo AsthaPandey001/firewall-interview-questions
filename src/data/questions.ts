@@ -52,16 +52,40 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
     steps: [
       {
         id: 1,
-        label: 'Network Topology Initialized',
-        badge: 'Client / FW / Server',
-        activeNodes: ['client', 'firewall', 'server'],
+        label: 'Client Initialized',
+        badge: 'Client Active',
+        activeNodes: ['client'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'The network perimeter is established with Client (10.0.0.25), Firewall Gateway, and Server (203.0.113.50).',
-        interviewTakeaway: 'Firewalls sit as a security barrier between trusted internal clients and untrusted external servers.'
+        whatIsHappening: 'The trusted client host (10.0.0.25) initializes inside the corporate LAN zone.',
+        interviewTakeaway: 'The source host prepares an outbound connection request.'
       },
       {
         id: 2,
-        label: 'Client Creates Data Packet',
+        label: 'Firewall Gateway Appears',
+        badge: 'Security Barrier',
+        activeNodes: ['firewall'],
+        whatIsHappening: 'The perimeter firewall appears as the security boundary between trusted and untrusted zones.',
+        interviewTakeaway: 'Firewalls enforce security boundaries and evaluate all crossing packets.'
+      },
+      {
+        id: 3,
+        label: 'Target Server Appears',
+        badge: 'Remote Host',
+        activeNodes: ['server'],
+        whatIsHappening: 'The target external web server (203.0.113.50:443) appears on the untrusted Internet WAN.',
+        interviewTakeaway: 'Network endpoints are defined by their layer-3 IP and layer-4 service port.'
+      },
+      {
+        id: 4,
+        label: 'Network Links Established',
+        badge: 'Links Active',
+        activeNodes: ['client', 'firewall', 'server'],
+        whatIsHappening: 'Physical and logical network connections connect Client -> Firewall -> Server.',
+        interviewTakeaway: 'All traffic between zones must traverse the firewall gateway.'
+      },
+      {
+        id: 5,
+        label: 'Client Creates TCP SYN Packet',
         badge: 'TCP :443 SYN',
         activeNodes: ['client'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
@@ -69,81 +93,83 @@ const QUESTIONS_DATA_PART1: QuestionData[] = [
         interviewTakeaway: 'The packet carries 5-tuple header metadata: Source IP, Dest IP, Source Port, Dest Port, and Protocol.'
       },
       {
-        id: 3,
-        label: 'Packet Travels to Firewall',
-        badge: 'In Transit',
+        id: 6,
+        label: 'Packet In Transit to Firewall',
+        badge: 'Transmitting →',
         activeNodes: ['client', 'firewall'],
         packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'The packet is routed across the network towards the perimeter security firewall.',
-        interviewTakeaway: 'Network traffic must cross the firewall before reaching the target server.'
-      },
-      {
-        id: 4,
-        label: 'Packet Reaches Firewall & Activates',
-        badge: 'Ingress Point',
-        activeNodes: ['firewall'],
-        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        whatIsHappening: 'The packet reaches the firewall ingress interface and stops for policy evaluation.',
-        interviewTakeaway: 'Firewalls buffer incoming packets to inspect headers against security rulebases.'
-      },
-      {
-        id: 5,
-        label: 'Firewall Inspects 5-Tuple Header',
-        badge: 'Deep Extraction',
-        activeNodes: ['firewall'],
-        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        decision: 'INSPECT',
-        whatIsHappening: 'Firewall extracts Source IP (10.0.0.25), Destination IP (203.0.113.50), Protocol (TCP), and Port (443).',
-        interviewTakeaway: 'L3/L4 filtering evaluates 5 key parameters to determine packet legitimacy.'
-      },
-      {
-        id: 6,
-        label: 'Firewall Checks Security Rules',
-        badge: 'Top-Down ACL',
-        activeNodes: ['firewall'],
-        activeRuleIndex: 0,
-        decision: 'INSPECT',
-        whatIsHappening: 'Firewall tests the extracted 5-tuple against its active Access Control List (ACL) from top to bottom.',
-        interviewTakeaway: 'Rules are evaluated sequentially in top-down order.'
+        whatIsHappening: 'The packet is routed across the LAN towards the firewall ingress interface.',
+        interviewTakeaway: 'Packets glide across network hops; they do not teleport.'
       },
       {
         id: 7,
-        label: 'Matching Rule Found',
-        badge: 'Rule #1 Matched',
+        label: 'Firewall Extracts 5-Tuple Header',
+        badge: 'Header Extraction',
+        activeNodes: ['firewall'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall buffers the packet and extracts Source IP (10.0.0.25), Dest IP (203.0.113.50), Protocol (TCP), and Port (443).',
+        interviewTakeaway: 'L3/L4 filtering evaluates the 5 key header parameters against rule criteria.'
+      },
+      {
+        id: 8,
+        label: 'Firewall Evaluates ACL Rulebase',
+        badge: 'Top-Down Evaluation',
+        activeNodes: ['firewall'],
+        activeRuleIndex: 0,
+        decision: 'INSPECT',
+        whatIsHappening: 'Firewall tests the extracted 5-tuple against its active Access Control List (ACL) in top-down order.',
+        interviewTakeaway: 'Rules are evaluated sequentially until the first match is reached.'
+      },
+      {
+        id: 9,
+        label: 'Rule #1 Match & ALLOW Decision',
+        badge: 'Rule 1 Matched ✓',
         activeNodes: ['firewall'],
         activeRuleIndex: 0,
         decision: 'ALLOW',
         ruleMatched: 'Rule 1: ALLOW 10.0.0.0/24 -> 203.0.113.50:443',
-        whatIsHappening: 'Rule 1 matches: Source 10.0.0.25 belongs to 10.0.0.0/24 subnet and destination port 443 is permitted.',
-        interviewTakeaway: 'First matching rule determines the outcome and halts further rule evaluation.'
-      },
-      {
-        id: 8,
-        label: 'Decision: ALLOW',
-        badge: 'Permitted ✓',
-        activeNodes: ['firewall'],
-        decision: 'ALLOW',
-        whatIsHappening: 'Firewall issues an ALLOW action, logging session state and opening egress forwarding gate.',
-        interviewTakeaway: 'Permitted traffic is queued for egress interface transmission.'
-      },
-      {
-        id: 9,
-        label: 'Packet Forwarded to Server',
-        badge: 'Delivered',
-        activeNodes: ['server'],
-        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
-        decision: 'ALLOW',
-        whatIsHappening: 'The packet leaves firewall and successfully reaches destination server.',
-        interviewTakeaway: 'Server receives legitimate packet and initiates SYN-ACK handshake response.'
+        whatIsHappening: 'Rule 1 matches: Source 10.0.0.25 is in 10.0.0.0/24 and destination port 443 is permitted. Action: ALLOW.',
+        interviewTakeaway: 'First-match semantics stop further evaluation and forward the packet.'
       },
       {
         id: 10,
-        label: 'Complete Process Visualized',
-        badge: 'End-to-End Complete',
+        label: 'Packet Forwarded to Server',
+        badge: 'Forwarding →',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '10.0.0.25', dstIp: '203.0.113.50', srcPort: 52410, dstPort: 443, protocol: 'TCP', flags: 'SYN' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Permitted packet is transmitted out the egress interface to destination server.',
+        interviewTakeaway: 'Firewall opens egress forwarding gate for allowed packets.'
+      },
+      {
+        id: 11,
+        label: 'Server Receives SYN & Generates SYN-ACK',
+        badge: 'Server SYN-ACK',
+        activeNodes: ['server'],
+        packetInfo: { srcIp: '203.0.113.50', dstIp: '10.0.0.25', srcPort: 443, dstPort: 52410, protocol: 'TCP', flags: 'SYN,ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'Destination server accepts the TCP SYN and generates a TCP SYN-ACK return handshake response.',
+        interviewTakeaway: 'Server initiates the second leg of the 3-way handshake.'
+      },
+      {
+        id: 12,
+        label: 'Return Packet Travels Back Through Firewall',
+        badge: 'Stateful Return',
+        activeNodes: ['firewall', 'client'],
+        packetInfo: { srcIp: '203.0.113.50', dstIp: '10.0.0.25', srcPort: 443, dstPort: 52410, protocol: 'TCP', flags: 'SYN,ACK' },
+        decision: 'ALLOW',
+        whatIsHappening: 'The SYN-ACK returns through the firewall, matching the established session table entry.',
+        interviewTakeaway: 'Stateful firewalls automatically allow established return traffic.'
+      },
+      {
+        id: 13,
+        label: 'Session Established Successfully',
+        badge: 'Handshake Complete ✓',
         activeNodes: ['client', 'firewall', 'server'],
         decision: 'ALLOW',
-        whatIsHappening: 'End-to-end visualization complete: PACKET → FIREWALL INSPECTION → RULE MATCH → ALLOWED → SERVER.',
-        interviewTakeaway: 'A firewall sits between networks and deterministically evaluates traffic before allowing or blocking it.'
+        whatIsHappening: 'Client receives SYN-ACK: full bidirectional TCP session is established through the firewall.',
+        interviewTakeaway: 'A complete firewall communication cycle includes both outbound request and inbound response verification.'
       }
     ]
   },

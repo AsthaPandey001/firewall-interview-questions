@@ -229,6 +229,38 @@ export const UniversalVisualEngine: React.FC<UniversalVisualEngineProps> = ({
         </div>
       </div>
 
+      {/* Direct To-The-Point Answer & Verdict Banner */}
+      <div className="mx-3 sm:mx-5 my-2.5 p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border border-slate-800">
+        <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-500/20 border border-blue-400/40 text-blue-300 text-[10px] sm:text-[11px] font-mono font-bold shrink-0 tracking-wide">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+            DIRECT ANSWER
+          </div>
+          <p className="text-xs sm:text-[13px] text-slate-100 font-semibold leading-snug break-words">
+            {step.interviewTakeaway || question.elevatorPitch}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+          {step.decision && (
+            <span className={`px-2.5 py-0.5 rounded-md font-mono text-[11px] font-extrabold uppercase tracking-wide border shadow-2xs ${
+              step.decision === 'ALLOW' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' :
+              step.decision === 'DENY' || step.decision === 'DROP' ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' :
+              step.decision === 'TRANSLATE' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' :
+              step.decision === 'ENCRYPT' ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' :
+              'bg-amber-500/20 text-amber-300 border-amber-500/40'
+            }`}>
+              VERDICT: {step.decision}
+            </span>
+          )}
+          {step.packetInfo && (
+            <span className="text-[10px] font-mono text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700">
+              {step.packetInfo.protocol} {step.packetInfo.srcPort ? `:${step.packetInfo.srcPort}` : ''} ➔ {step.packetInfo.dstPort ? `:${step.packetInfo.dstPort}` : ''}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* Main Progressive Visual Stage Canvas */}
       <div className="flex-1 w-full relative p-2 sm:p-4 flex items-center justify-center min-h-[260px] sm:min-h-[340px] bg-slate-50/40 overflow-hidden">
         
