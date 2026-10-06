@@ -215,7 +215,7 @@ export const Q22DmzProtectionVisualizer: React.FC<Props> = ({ currentStepIndex }
         <g className="animate-pop-in transition-all duration-500">
           <PacketCard
             cx={packetX}
-            cy={packetY - 45}
+            cy={26}
             title={packetTitle}
             protocol={packetProto}
             port={packetDst.split(':')[1] || '443'}

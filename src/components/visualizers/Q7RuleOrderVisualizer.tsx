@@ -41,7 +41,7 @@ export const Q7RuleOrderVisualizer: React.FC<Props> = ({ currentStepIndex }) => 
         </button>
       </div>
 
-      <svg viewBox="0 0 760 300" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
+      <svg viewBox="0 0 760 340" className="w-full h-full select-none" preserveAspectRatio="xMidYMid meet">
         {/* Network Baseline Line */}
         <line x1="90" y1="75" x2="650" y2="75" stroke="#e2e8f0" strokeWidth="3" strokeDasharray="4 4" />
 

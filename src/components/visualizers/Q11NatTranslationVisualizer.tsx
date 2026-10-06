@@ -136,7 +136,7 @@ export const Q11NatTranslationVisualizer: React.FC<Props> = ({ currentStepIndex 
 
       {/* Internet Cloud Node */}
       {showInternet && (
-        <g transform="translate(510, 52)" className="animate-pop-in">
+        <g transform="translate(510, 80)" className="animate-pop-in">
           <rect x="-35" y="-12" width="70" height="22" rx="11" fill="#f8fafc" stroke="#94a3b8" />
           <text x="0" y="2" textAnchor="middle" fontSize="7.5" fontWeight="bold" fill="#475569" fontFamily="sans-serif">
             ☁️ INTERNET
