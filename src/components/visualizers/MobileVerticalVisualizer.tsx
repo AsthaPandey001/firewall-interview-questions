@@ -163,11 +163,11 @@ export const MobileVerticalVisualizer: React.FC<MobileVerticalVisualizerProps> =
         </div>
 
         {/* Direct Answer Compact Ribbon */}
-        <div className="p-2 rounded-lg bg-slate-900 text-white flex items-start gap-1.5">
-          <span className="px-1.5 py-0.5 rounded bg-blue-500/30 text-blue-300 font-mono text-[9px] font-bold uppercase shrink-0 mt-0.5">
+        <div className="p-2.5 rounded-lg bg-blue-50/90 border border-blue-100 text-slate-800 flex items-start gap-1.5 shadow-2xs">
+          <span className="px-1.5 py-0.5 rounded bg-blue-100 border border-blue-200 text-blue-800 font-mono text-[9px] font-bold uppercase shrink-0 mt-0.5">
             Answer
           </span>
-          <p className="text-[11px] text-slate-100 font-medium leading-tight">
+          <p className="text-[11px] text-slate-700 font-semibold leading-tight">
             {step.interviewTakeaway || question.elevatorPitch}
           </p>
         </div>
