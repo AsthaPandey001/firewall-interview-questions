@@ -85,9 +85,19 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right Side: Search bar, Notification Bell & NetPrep Logo on the Right Corner */}
-        <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           
-          {/* Desktop Search bar & Bell */}
+          {/* Mobile Search Button (< sm) */}
+          <button
+            onClick={onOpenSearch}
+            className="flex sm:hidden h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 active:scale-95 transition-transform"
+            aria-label="Search questions"
+            title="Search questions"
+          >
+            <Search className="h-4 w-4 text-slate-500" />
+          </button>
+
+          {/* Desktop Search bar & Bell (>= sm) */}
           <div className="hidden sm:flex items-center gap-2 sm:gap-3">
             {/* Clean Airy Search Input */}
             <button
@@ -116,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onSelectCategory('all')}
             className="flex cursor-pointer items-center gap-1 shrink-0 pl-1"
           >
-            <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900">
+            <span className="text-base sm:text-xl font-black tracking-tight text-slate-900">
               Net<span className="text-blue-600">Prep</span>
             </span>
           </div>
